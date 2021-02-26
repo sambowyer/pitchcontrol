@@ -336,6 +336,15 @@
 		4FFBB93020863B0E00DDD0E7 /* fbuffer.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F8158C1205D50EB00393585 /* fbuffer.cpp */; };
 		4FFBB93420863B0E00DDD0E7 /* coreiids.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F8158E0205D50EB00393585 /* coreiids.cpp */; };
 		4FFBB93520863B0E00DDD0E7 /* vstnoteexpressiontypes.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F81588E205D50EB00393585 /* vstnoteexpressiontypes.cpp */; };
+		5982562025D3FC1300E2E110 /* WDL in Resources */ = {isa = PBXBuildFile; fileRef = 5982561F25D3FC1300E2E110 /* WDL */; };
+		5982562125D3FC1300E2E110 /* WDL in Resources */ = {isa = PBXBuildFile; fileRef = 5982561F25D3FC1300E2E110 /* WDL */; };
+		5982562225D3FC1300E2E110 /* WDL in Resources */ = {isa = PBXBuildFile; fileRef = 5982561F25D3FC1300E2E110 /* WDL */; };
+		5982562325D3FC1300E2E110 /* WDL in Resources */ = {isa = PBXBuildFile; fileRef = 5982561F25D3FC1300E2E110 /* WDL */; };
+		5982562425D3FC1300E2E110 /* WDL in Resources */ = {isa = PBXBuildFile; fileRef = 5982561F25D3FC1300E2E110 /* WDL */; };
+		5982562525D3FC1300E2E110 /* WDL in Resources */ = {isa = PBXBuildFile; fileRef = 5982561F25D3FC1300E2E110 /* WDL */; };
+		5982562625D3FC1300E2E110 /* WDL in Resources */ = {isa = PBXBuildFile; fileRef = 5982561F25D3FC1300E2E110 /* WDL */; };
+		5982562725D3FC1300E2E110 /* WDL in Resources */ = {isa = PBXBuildFile; fileRef = 5982561F25D3FC1300E2E110 /* WDL */; };
+		5982562825D3FC1300E2E110 /* WDL in Resources */ = {isa = PBXBuildFile; fileRef = 5982561F25D3FC1300E2E110 /* WDL */; };
 		B885CBC52304AE7300D73128 /* IPlugProcessor.cpp in Sources */ = {isa = PBXBuildFile; fileRef = 4F8F61A8202807B9003F2573 /* IPlugProcessor.cpp */; };
 		B8E22A0C220268C4007CBF4C /* IPlugVST3_ProcessorBase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B8E22A0A220268C4007CBF4C /* IPlugVST3_ProcessorBase.cpp */; };
 		B8E22A0D220268C4007CBF4C /* IPlugVST3_ProcessorBase.cpp in Sources */ = {isa = PBXBuildFile; fileRef = B8E22A0A220268C4007CBF4C /* IPlugVST3_ProcessorBase.cpp */; };
@@ -494,7 +503,7 @@
 		4F2EA977203A50E9008E4850 /* IPlugAPP_dialog.cpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.cpp.cpp; name = IPlugAPP_dialog.cpp; path = ../../../IPlug/APP/IPlugAPP_dialog.cpp; sourceTree = "<group>"; tabWidth = 2; };
 		4F35DEAB207E5C5A00867D8F /* IPlugPluginBase.cpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.cpp.cpp; name = IPlugPluginBase.cpp; path = ../../../IPlug/IPlugPluginBase.cpp; sourceTree = "<group>"; tabWidth = 2; };
 		4F35DEAC207E5C5A00867D8F /* IPlugPluginBase.h */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.c.h; name = IPlugPluginBase.h; path = ../../../IPlug/IPlugPluginBase.h; sourceTree = "<group>"; tabWidth = 2; };
-		4F3862ED2014BBEC0009F402 /* PitchControl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.cpp.cpp; name = PitchControl.cpp; path = ../PitchControl.cpp; sourceTree = "<group>"; };
+		4F3862ED2014BBEC0009F402 /* PitchControl.cpp */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.cpp.cpp; name = PitchControl.cpp; path = ../PitchControl.cpp; sourceTree = "<group>"; tabWidth = 2; };
 		4F3862EE2014BBEC0009F402 /* PitchControl.h */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.c.h; name = PitchControl.h; path = ../PitchControl.h; sourceTree = "<group>"; };
 		4F3862FF2014BCC70009F402 /* scripts */ = {isa = PBXFileReference; lastKnownFileType = folder; name = scripts; path = ../scripts; sourceTree = "<group>"; };
 		4F3907602013EBA300DDA490 /* PitchControl.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = PitchControl.appex; sourceTree = BUILT_PRODUCTS_DIR; };
@@ -813,8 +822,9 @@
 		4FFBB94120863E9300DDD0E7 /* IPlugVST3_Parameter.h */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.c.h; name = IPlugVST3_Parameter.h; path = ../../../IPlug/VST3/IPlugVST3_Parameter.h; sourceTree = "<group>"; tabWidth = 2; };
 		4FFF72B8214BB71400839091 /* main.rc */ = {isa = PBXFileReference; lastKnownFileType = text; name = main.rc; path = ../resources/main.rc; sourceTree = "<group>"; };
 		52FBBED30D0CF143001C8B8A /* config.h */ = {isa = PBXFileReference; fileEncoding = 4; indentWidth = 2; lastKnownFileType = sourcecode.c.h; name = config.h; path = ../config.h; sourceTree = "<group>"; tabWidth = 2; usesTabs = 0; };
-		59E1079B255D801F0069B632 /* fft.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = fft.cpp; sourceTree = "<group>"; };
-		59E1079C255D801F0069B632 /* fft.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = fft.h; sourceTree = "<group>"; };
+		5982561F25D3FC1300E2E110 /* WDL */ = {isa = PBXFileReference; lastKnownFileType = folder; name = WDL; path = ../../../WDL; sourceTree = "<group>"; };
+		59E1079B255D801F0069B632 /* fft2.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; path = fft2.cpp; sourceTree = "<group>"; };
+		59E1079C255D801F0069B632 /* fft2.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = fft2.h; sourceTree = "<group>"; };
 		B8E22A0A220268C4007CBF4C /* IPlugVST3_ProcessorBase.cpp */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.cpp.cpp; name = IPlugVST3_ProcessorBase.cpp; path = ../../../IPlug/VST3/IPlugVST3_ProcessorBase.cpp; sourceTree = "<group>"; tabWidth = 2; };
 		B8E22A0B220268C4007CBF4C /* IPlugVST3_ProcessorBase.h */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.c.h; name = IPlugVST3_ProcessorBase.h; path = ../../../IPlug/VST3/IPlugVST3_ProcessorBase.h; sourceTree = "<group>"; tabWidth = 2; };
 		B8EA6B932203868500D23A86 /* IPlugVST3_Common.h */ = {isa = PBXFileReference; indentWidth = 2; lastKnownFileType = sourcecode.c.h; name = IPlugVST3_Common.h; path = ../../../IPlug/VST3/IPlugVST3_Common.h; sourceTree = "<group>"; tabWidth = 2; };
@@ -894,11 +904,12 @@
 		089C166AFE841209C02AAC07 /* IPlugExample */ = {
 			isa = PBXGroup;
 			children = (
+				5982561F25D3FC1300E2E110 /* WDL */,
 				52FBBED30D0CF143001C8B8A /* config.h */,
 				4F3862EE2014BBEC0009F402 /* PitchControl.h */,
 				4F3862ED2014BBEC0009F402 /* PitchControl.cpp */,
-				59E1079B255D801F0069B632 /* fft.cpp */,
-				59E1079C255D801F0069B632 /* fft.h */,
+				59E1079B255D801F0069B632 /* fft2.cpp */,
+				59E1079C255D801F0069B632 /* fft2.h */,
 				4F9313232315CA1100DB2383 /* README.md */,
 				089C167CFE841241C02AAC07 /* Resources */,
 				32C88E010371C26100C91783 /* Other Sources */,
@@ -2032,6 +2043,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5982562125D3FC1300E2E110 /* WDL in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2039,6 +2051,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5982562325D3FC1300E2E110 /* WDL in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2046,6 +2059,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5982562625D3FC1300E2E110 /* WDL in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2053,6 +2067,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5982562825D3FC1300E2E110 /* WDL in Resources */,
 				4F3EE1BF231438D000004786 /* PitchControl.icns in Resources */,
 				4F3EE1C0231438D000004786 /* PitchControl-macOS-MainMenu.xib in Resources */,
 			);
@@ -2062,6 +2077,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5982562725D3FC1300E2E110 /* WDL in Resources */,
 				4F78BE3C22E74CD000AD537E /* IPlugAUViewController.xib in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -2070,6 +2086,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5982562225D3FC1300E2E110 /* WDL in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2077,6 +2094,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5982562425D3FC1300E2E110 /* WDL in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -2084,6 +2102,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5982562025D3FC1300E2E110 /* WDL in Resources */,
 				4F78D88613B6382B0032E0F3 /* PitchControl.icns in Resources */,
 				4F1B4AE42014D33600BC64D4 /* PitchControl-macOS-MainMenu.xib in Resources */,
 			);
@@ -2093,6 +2112,7 @@
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				5982562525D3FC1300E2E110 /* WDL in Resources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

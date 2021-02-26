@@ -249,11 +249,18 @@ test766Rolling20()
 
 
 # Histogram
-HISTOGRAM = False;
+HISTOGRAM = True;
 
 if HISTOGRAM:
     fig, ax = plt.subplots(tight_layout=True)
 
     # We can set the number of bins with the `bins` kwarg
-    ax.hist(readings, bins=1000)
+    ax.hist([readings[i] for i in range(173) if readings[i]<1000], bins=500)
+    plt.title("Histogram of frequency estimations\n(bin size = 2Hz)", fontsize=17)
+    plt.xlabel('Frequency (Hz)',fontsize=17)
+    plt.ylabel('Number of Estimates', fontsize=17)
     plt.show()
+    
+    #val = 0. # this is the value where you want the data to appear on the y-axis.
+#    plt.plot(readings, np.zeros_like(readings), 'x')
+#    plt.show()
