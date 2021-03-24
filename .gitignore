@@ -1,6 +1,6 @@
-/__pychache__/*
-/wavs/*
+__pychache__/
+wavs/
 *.wav
-*.py[cod]
+*.pyc
 .DS_Store
-/.vscode/*
+.vscode/
