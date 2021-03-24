@@ -1,9 +1,6 @@
 import sys
 import wave
-import zerocross
-import autocorrelation
-import cepstrum
-import AMDF
+from predict import zerocross, autocorrelation, AMDF, naiveFT, cepstrum, HPS
 import signalGenerator
 import math
 import circularBuffer
@@ -49,24 +46,32 @@ def analysePitch(file):
         buffer.add(data[i])
 
 
-printPitchInfo(440)
+# printPitchInfo(440)
 
-data, samplerate = sf.read('wavs/guitarC3.wav')
-# print(zerocross.zerocrossPredict(toMono(data[1000:3048]), samplerate))
-# print(autocorrelation.autocorrelationPredict(toMono(data[1000:3048]), samplerate))
+# data, samplerate = sf.read('wavs/guitarC3.wav')
+# print(zerocross(toMono(data[1000:3048]), samplerate))
+# print(autocorrelation(toMono(data[1000:3048]), samplerate))
 
-printPitchInfo(cepstrum.cepstrumPredict(toMono(data[1000:5096]), samplerate))
-printPitchInfo(cepstrum.cepstrumPredict(signalGenerator.getSineWithHarmonics(440,2048,22050, 20), 44100))
+# printPitchInfo(cepstrum(toMono(data[1000:5096]), samplerate))
+# printPitchInfo(cepstrum(signalGenerator.getSineWithHarmonics(440,2048,22050, 20), 44100))
 
-# print(AMDF.AMDFPredict(toMono(data[1000:3048]), samplerate))
-# print(AMDF.AMDFPredict(signalGenerator.getSineWithHarmonics(440,1024,44100,20),44100,0.5))
-# print(AMDF.AMDFPredict(signalGenerator.getSine(440,1024,44100),44100,1))
+# print(AMDF(toMono(data[1000:3048]), samplerate))
+# print(AMDF(signalGenerator.getSineWithHarmonics(440,1024,44100,20),44100,0.5))
+# print(AMDF(signalGenerator.getSine(440,1024,44100),44100,1))
 
 # data, samplerate = sf.read('440sine.wav') #data is of type float_64 by default
 # print(sf.info('440sine.wav', verbose=True))
 
-# print(zerocross.zerocrossPredict(data, 44100))
-# print(autocorrelation.autocorrelationPredict(data, 44100))
+# print(zerocross(data, 44100))
+# print(autocorrelation(data, 44100))
+
+printPitchInfo(zerocross(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100))
+printPitchInfo(autocorrelation(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100))
+printPitchInfo(AMDF(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100))
+printPitchInfo(naiveFT(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100, False))
+printPitchInfo(cepstrum(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100, False))
+printPitchInfo(HPS(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100, False, 4))
+
 
 def generatedSignalsTest(freqs = [50,100,200,300,400,440,500,800,1000,2000,4000,8000,10000,15000]):
     for freq in freqs:
@@ -78,87 +83,87 @@ def generatedSignalsTest(freqs = [50,100,200,300,400,440,500,800,1000,2000,4000,
 
     ########
         start = timer()
-        pred = zerocross.zerocrossPredict(sine, 44100)
+        pred = zerocross(sine, 44100)
         end = timer()
         print("Sine     %sHz: %sHz (zerocross)       - took %ss" % (freq, pred, end-start))
 
         start = timer()
-        pred = autocorrelation.autocorrelationPredict(sine, 44100)
+        pred = autocorrelation(sine, 44100)
         end = timer()
         print("Sine     %sHz: %sHz (autocorrelation) - took %ss" % (freq, pred, end-start))
 
         start = timer()
-        pred = cepstrum.cepstrumPredict(sine, 44100)
+        pred = cepstrum(sine, 44100, False)
         end = timer()
         print("Sine     %sHz: %sHz (cepstrum)       - took %ss" % (freq, pred, end-start))
 
     ########
         start = timer()
-        pred = zerocross.zerocrossPredict(square, 44100)
+        pred = zerocross(square, 44100)
         end = timer()
         print("Sqaure   %sHz: %sHz (zerocross)       - took %ss" % (freq, pred, end-start))
 
         start = timer()
-        pred = autocorrelation.autocorrelationPredict(square, 44100)
+        pred = autocorrelation(square, 44100)
         end = timer()
         print("Square   %sHz: %sHz (autocorrelation) - took %ss" % (freq, pred, end-start))
 
         start = timer()
-        pred = cepstrum.cepstrumPredict(square, 44100)
+        pred = cepstrum(square, 44100, False)
         end = timer()
         print("Square   %sHz: %sHz (cepstrum) - took %ss" % (freq, pred, end-start))
 
     ########
         start = timer()
-        pred = zerocross.zerocrossPredict(saw, 44100)
+        pred = zerocross(saw, 44100)
         end = timer()
         print("Sawtooth %sHz: %sHz (zerocross)       - took %ss" % (freq, pred, end-start))
 
         start = timer()
-        pred = autocorrelation.autocorrelationPredict(saw, 44100)
+        pred = autocorrelation(saw, 44100)
         end = timer()
         print("Sawtooth %sHz: %sHz (autocorrelation) - took %ss" % (freq, pred, end-start))
 
         start = timer()
-        pred = cepstrum.cepstrumPredict(saw, 44100)
+        pred = cepstrum(saw, 44100, False)
         end = timer()
         print("Sawtooth %sHz: %sHz (cepstrum) - took %ss" % (freq, pred, end-start))
 
     ########
 
         start = timer()
-        pred = zerocross.zerocrossPredict(triangle, 44100)
+        pred = zerocross(triangle, 44100)
         end = timer()
         print("Triangle %sHz: %sHz (zerocross)       - took %ss" % (freq, pred, end-start))
 
         start = timer()
-        pred = autocorrelation.autocorrelationPredict(triangle, 44100)
+        pred = autocorrelation(triangle, 44100)
         end = timer()
         print("Triangle %sHz: %sHz (autocorrelation) - took %ss" % (freq, pred, end-start))
 
         start = timer()
-        pred = cepstrum.cepstrumPredict(triangle, 44100)
+        pred = cepstrum(triangle, 44100, False)
         end = timer()
         print("Triangle %sHz: %sHz (cepstrum) - took %ss" % (freq, pred, end-start))
 
     ########
 
         start = timer()
-        pred = zerocross.zerocrossPredict(sineHarmonics, 44100)
+        pred = zerocross(sineHarmonics, 44100)
         end = timer()
         print("sineHarmonics %sHz: %sHz (zerocross)       - took %ss" % (freq, pred, end-start))
 
         start = timer()
-        pred = autocorrelation.autocorrelationPredict(sineHarmonics, 44100)
+        pred = autocorrelation(sineHarmonics, 44100)
         end = timer()
         print("sineHarmonics %sHz: %sHz (autocorrelation) - took %ss" % (freq, pred, end-start))
 
         start = timer()
-        pred = cepstrum.cepstrumPredict(sineHarmonics, 44100)
+        pred = cepstrum(sineHarmonics, 44100, False)
         end = timer()
         print("sineHarmonics %sHz: %sHz (cepstrum) - took %ss" % (freq, pred, end-start))
 
-generatedSignalsTest()
+# generatedSignalsTest()
 
 def testSignalsToCSV(signals):
     pass
