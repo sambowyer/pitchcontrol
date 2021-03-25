@@ -102,7 +102,7 @@ def AMDF(signal, sampleRate, b=1):
 
 #### FREQUENCY-DOMAIN ALGORITHMS
 
-## Preliminary Functions
+## Preliminary sunctions for frequency-domain algorithms
 
 def fft(signal, isCustomFFT):
     if isCustomFFT:
@@ -205,3 +205,36 @@ def HPS(signal, sampleRate, isCustomFFT, numDownsamples):
 
     return freq_vector[maxBin]
 
+
+#### Functions utilising all pitch detection algorithms
+
+## Preliminary function
+
+def getTrimmedMean(data, trimSize):
+    '''returns the mean of the list 'data' excluding its smallest and largest elements.
+    The total proportion of the list to be excluded from the mean calculation is given by 'trimSize' - between 0 and 1.'''
+    if trimSize > 1:
+        return sum
+    sortedData = data.copy()
+    sortedData.sort()
+    trimIndices = [math.floor((len(data)-1)*trimSize), math.ceil((len(data)-1)*(1-trimSize))]
+    trimIndices.sort()
+    return sum(sortedData[trimIndices[0]:trimIndices[1]])/(trimIndices[1]-trimIndices[0])
+
+
+## Function to return a dictionary of predictions from all algorithms
+
+def getAllPredictions(signal, sampleRate, b, isCustomFFT, numDownsamples):
+    predictions = {"zerocross" : zerocross(signal, sampleRate), 
+                   "autocorrelation" : autocorrelation(signal, sampleRate), 
+                   "AMDF" : AMDF(signal, sampleRate, b), 
+                   "naiveFFT" : naiveFFT(signal, sampleRate, isCustomFFT), 
+                   "cepstrum" : cepstrum(signal, sampleRate, isCustomFFT), 
+                   "HPS" : HPS(signal, sampleRate, isCustomFFT, numDownsamples)}
+    
+    return predictions
+
+def getTrimmedMeanPrediction(signal, sampleRate, b, isCustomFFT, numDownsamples, trimSize):
+    predictions = [zerocross(signal, sampleRate), autocorrelation(signal, sampleRate), AMDF(signal, sampleRate, b),
+        naiveFFT(signal, sampleRate, isCustomFFT), cepstrum(signal, sampleRate, isCustomFFT), HPS(signal, sampleRate, isCustomFFT, numDownsamples)]
+    return getTrimmedMean(predictions, trimSize)

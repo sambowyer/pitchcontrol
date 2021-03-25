@@ -27,7 +27,7 @@ def getNoteName(freq):
     return ("A","A#","B","C", "C#","D", "D#","E","F", "F#","G", "G#")[(midiNote+3) % 12] + str(midiOctave)
 
 def getCents(freq):
-    return round(getMidiNoteWithCents(freq) % 1) * 100
+    return round(getMidiNoteWithCents(freq) % 1 * 100)
 
 def printPitchInfo(freq):
     print("%sHz - %s + %scents" % (freq, getNoteName(freq), getCents(freq)))
@@ -164,6 +164,3 @@ def generatedSignalsTest(freqs = [50,100,200,300,400,440,500,800,1000,2000,4000,
         print("sineHarmonics %sHz: %sHz (cepstrum) - took %ss" % (freq, pred, end-start))
 
 # generatedSignalsTest()
-
-def testSignalsToCSV(signals):
-    pass
