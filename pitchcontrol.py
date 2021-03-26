@@ -65,12 +65,12 @@ def analysePitch(file):
 # print(zerocross(data, 44100))
 # print(autocorrelation(data, 44100))
 
-printPitchInfo(zerocross(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100))
-printPitchInfo(autocorrelation(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100))
-printPitchInfo(AMDF(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100))
-printPitchInfo(naiveFT(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100, False))
-printPitchInfo(cepstrum(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100, False))
-printPitchInfo(HPS(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100, False, 4))
+# printPitchInfo(zerocross(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100))
+# printPitchInfo(autocorrelation(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100))
+# printPitchInfo(AMDF(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100))
+# printPitchInfo(naiveFT(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100, False))
+# printPitchInfo(cepstrum(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100, False))
+# printPitchInfo(HPS(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100, False, 4))
 
 
 def generatedSignalsTest(freqs = [50,100,200,300,400,440,500,800,1000,2000,4000,8000,10000,15000]):
