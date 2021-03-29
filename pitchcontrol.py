@@ -65,13 +65,124 @@ def analysePitch(file):
 # print(zerocross(data, 44100))
 # print(autocorrelation(data, 44100))
 
-# printPitchInfo(zerocross(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100))
-# printPitchInfo(autocorrelation(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100))
-# printPitchInfo(AMDF(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100))
-# printPitchInfo(naiveFT(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100, False))
-# printPitchInfo(cepstrum(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100, False))
-# printPitchInfo(HPS(signalGenerator.getSineWithHarmonics(880,2048,22050, 20), 44100, False, 4))
+# printPitchInfo(zerocross(signalGenerator.getSaw(100,2048,44100), 44100))
+# printPitchInfo(autocorrelation(signalGenerator.getSaw(100,2048,44100), 44100))
+# printPitchInfo(AMDF(signalGenerator.getSaw(100,2048,44100), 44100))
+# printPitchInfo(naiveFT(signalGenerator.getSaw(100,2048,44100), 44100, False))
+# printPitchInfo(cepstrum(signalGenerator.getSaw(100,2048,44100), 44100, False))
+# printPitchInfo(HPS(signalGenerator.getSaw(100,2048,44100), 44100, False, 4))
 
+def expectedIntervalTest():
+
+    #autocorrelation
+    print("autocorrelation")
+
+    #octave error
+    print("ACTUAL: 1500Hz OLD: 747Hz NEW: ", end="")
+    printPitchInfo(autocorrelation(signalGenerator.getSaw(1500,2048,44100), 44100, expectedMin=1000, expectedMax=3000)) # -> 747
+    print("^expectedMin=1000, expectedMax=3000")
+    print("ACTUAL: 1500Hz OLD: 747Hz NEW: ", end="")
+    printPitchInfo(autocorrelation(signalGenerator.getSquare(1500,2048,44100), 44100, expectedMin=1000, expectedMax=3000)) # -> 747
+    print("^expectedMin=1000, expectedMax=3000")
+
+    #other error
+    print("ACTUAL: 2500Hz OLD: 832Hz NEW: ", end="")
+    printPitchInfo(autocorrelation(signalGenerator.getTriangle(2500,2048,44100), 44100, expectedMin=1500, expectedMax=4000)) # -> 832
+    print("^expectedMin=1500, expectedMax=4000")
+    print("ACTUAL: 5000Hz OLD: 454Hz NEW: ", end="")
+    printPitchInfo(autocorrelation(signalGenerator.getSaw(5000,2048,44100), 44100, expectedMin=3000, expectedMax=9000)) # -> 454
+    print("^expectedMin=3000, expectedMax=9000")
+
+    ####
+
+
+    #AMDF
+    print("\nAMDF")
+
+    #octave error
+    print("ACTUAL: 600Hz OLD: 300Hz NEW: ", end="")
+    printPitchInfo(AMDF(signalGenerator.getSaw(600,2048,44100), 44100, expectedMin=330, expectedMax=1500)) # -> 300
+    print("^expectedMin=330, expectedMax=1500")
+    print("ACTUAL: 600Hz OLD: 300Hz NEW: ", end="")
+    printPitchInfo(AMDF(signalGenerator.getSquare(600,2048,44100), 44100, expectedMin=330, expectedMax=1500)) # -> 300
+    print("^expectedMin=330, expectedMax=1500")
+
+    #other error
+    print("ACTUAL: 500 Hz OLD: 100Hz NEW: ", end="")
+    printPitchInfo(AMDF(signalGenerator.getTriangle(500,2048,44100), 44100, expectedMin=300, expectedMax=1000)) # -> 100
+    print("^expectedMin=300, expectedMax=1000")
+    print("ACTUAL: 600Hz OLD: 150Hz NEW: ", end="")
+    printPitchInfo(AMDF(signalGenerator.getSine(600,2048,44100), 44100, expectedMin=250, expectedMax=1500)) # -> 150
+    print("^expectedMin=250, expectedMax=1500")
+
+    ####
+
+
+    #naiveFT
+    print("\nnaiveFT")
+
+    #octave error 
+    print("ACTUAL: 1500Hz OLD: 7052Hz NEW: ", end="")
+    printPitchInfo(naiveFT(signalGenerator.getSaw(1500,2048,22050), 22050, False, expectedMin=800, expectedMax=3000)) # -> 7052
+    print("^expectedMin=800, expectedMax=3000")
+    print("ACTUAL: 1500Hz OLD: 7052Hz NEW: ", end="")
+    printPitchInfo(naiveFT(signalGenerator.getSquare(1500,2048,22050), 22050, False, expectedMin=800, expectedMax=3000)) # -> 7052
+    print("^expectedMin=800, expectedMax=3000")
+
+    #other error
+    print("ACTUAL: 12500Hz OLD: 9549Hz NEW: ", end="")
+    printPitchInfo(naiveFT(signalGenerator.getSine(12500,2048,22050), 22050, False, expectedMin=10000, expectedMax=15000)) # -> 9549
+    print("^expectedMin=10000, expectedMax=15000")
+    print("ACTUAL: 17500Hz OLD: 4554Hz NEW: ", end="")
+    printPitchInfo(naiveFT(signalGenerator.getTriangle(17500,2048,22050), 22050, False, expectedMin=10000)) # -> 4554
+    print("^expectedMin=10000")
+
+    # ####
+
+
+    #cepstrum
+    print("\ncepstrum")
+
+    #other error
+    print("ACTUAL: 300Hz OLD: 3678Hz NEW: ", end="")
+    printPitchInfo(cepstrum(signalGenerator.getTriangle(300,2048,44100), 44100, False, expectedMax=1500)) # -> 3678
+    print("^expectedMax=1500")
+    print("ACTUAL: 300Hz OLD: 3678Hz NEW: ", end="")
+    printPitchInfo(cepstrum(signalGenerator.getSineWithHarmonics(300,2048,44100, 20), 44100, False, expectedMax=1500)) # -> 3678
+    print("^expectedMax=1500")
+    print("ACTUAL: 900Hz OLD: 269Hz NEW: ", end="")
+    printPitchInfo(cepstrum(signalGenerator.getSquare(900,2048,44100), 44100, False, expectedMin=300, expectedMax=1500)) # -> 269
+    print("^expectedMin=300, expectedMax=1500")
+
+    ####
+
+
+    #HPS
+    print("\nHPS")
+
+    #octave error
+    print("ACTUAL: 12500Hz OLD: 6589Hz NEW: ", end="")
+    printPitchInfo(HPS(signalGenerator.getTriangle(12500,2048,44100), 44100, False, 4, expectedMin=7500, expectedMax=16000)) # -> 6589
+    print("^expectedMin=7500, expectedMax=16000")
+    print("ACTUAL: 12500Hz OLD: 6589Hz NEW: ", end="")
+    printPitchInfo(HPS(signalGenerator.getSquare(12500,2048,44100), 44100, False, 4, expectedMin=7500, expectedMax=16000)) # -> 6589
+    print("^expectedMin=7500, expectedMax=16000")
+
+    #other error
+    print("ACTUAL: 400Hz OLD: 129Hz NEW: ", end="")
+    printPitchInfo(HPS(signalGenerator.getTriangle(400,2048,44100), 44100, False, 4, expectedMin=200, expectedMax=1500)) # -> 129
+    print("^expectedMin=200, expectedMax=1500")
+    print("ACTUAL: 400Hz OLD: 129Hz NEW: ", end="")
+    printPitchInfo(HPS(signalGenerator.getSine(400,2048,44100), 44100, False, 4, expectedMin=200, expectedMax=1500)) # -> 129
+    print("^expectedMin=200, expectedMax=1500")
+    print("ACTUAL: 1500Hz OLD: 4500Hz NEW: ", end="")
+    printPitchInfo(HPS(signalGenerator.getSaw(1500,2048,44100), 44100, False, 4, expectedMin=800, expectedMax=3000)) # -> 4500
+    print("^expectedMin=800, expectedMax=3000")
+    print("ACTUAL: 1500Hz OLD: 4500Hz NEW: ", end="")
+    printPitchInfo(HPS(signalGenerator.getSquare(1500,2048,44100), 44100, False, 4, expectedMin=800, expectedMax=3000)) # -> 4500
+    print("^expectedMin=800, expectedMax=3000")
+
+expectedIntervalTest()
 
 def generatedSignalsTest(freqs = [50,100,200,300,400,440,500,800,1000,2000,4000,8000,10000,15000]):
     for freq in freqs:

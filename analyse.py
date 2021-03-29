@@ -103,7 +103,7 @@ def printDictionaryOfAverageErrors(avgErrDict):
 ###### REDO OR DISCOUNT THIS FUNCTION FROM FINAL GIT COMMIT B/C HEAVILY RELIES ON TUTORIAL @ 
 ###### https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html#sphx-glr-gallery-lines-bars-and-markers-barchart-py
 def showErrorGraphs(avgErrDict, errorType, signalTypes):
-    labels = ["zerocross", "autocorrelation", "AMDF", "naiveFT", "cepstrum", "HPS"]
+    labels = ["zerocross", "autocorrelation", "AMDF", "naiveFT", "cepstrum", "HPS", "median"] #ignoring the 'average' label for now
     signalErrors = []
     for signalType in signalTypes:
         signalErrors.append([avgErrDict[algorithm][signalType][errorType] for algorithm in labels])
@@ -171,6 +171,7 @@ def showErrorGraphs(avgErrDict, errorType, signalTypes):
     plt.show()
 
 avgErrDict = getDictionaryOfAverageErrors(getDictionaryOfErrors("csvs/generatedSignalsTest.csv"))
+printDictionaryOfAverageErrors(avgErrDict)
 for i in range(4):
     showErrorGraphs(avgErrDict, i, ["sine", "saw", "square", "triangle", "sineWith10Harmonics", "sineWith20Harmonics"])
 

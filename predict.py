@@ -27,7 +27,7 @@ def zerocross(signal, sampleRate):
 
     return sampleRate*0.5*(zeroCrossCount-1)/(lastZeroCrossIndex-firstZeroCrossIndex)
 
-def autocorrelation(signal, sampleRate):
+def autocorrelation(signal, sampleRate, expectedMin=20, expectedMax=20000):
     '''Autocorrelation Pitch Detection
     Predicts the frequency of a mono signal by finding the time interval (of m samples) for which the signal most consistently repeats itself.
     Autocorrelation uses the product of signal values at intervals of m samples to find this optimal m.'''
@@ -54,16 +54,16 @@ def autocorrelation(signal, sampleRate):
 
             bins[m] += sum
 
-    maxCorrelation = 0
-    maxM = 0
-    for m in range(1, maxComparisionDistance+1):
-        if bins[m] >  maxCorrelation:
+    maxCorrelation = -float("inf")
+    maxM = 1
+    for m in range(max(1, math.ceil(sampleRate/expectedMax)), min(maxComparisionDistance+1, math.ceil(sampleRate/expectedMin))):
+        if bins[m] > maxCorrelation:
             maxCorrelation = bins[m]
             maxM = m
 
     return sampleRate / maxM
 
-def AMDF(signal, sampleRate, b=1):
+def AMDF(signal, sampleRate, b=1, expectedMin=20, expectedMax=20000):
     '''Average Magnitude Differential Function Pitch Detection
     Predicts the frequency of a mono signal by finding the time interval (of m samples) for which the signal most consistently repeats itself.
     AMDF uses the Euclidean distance (to the power of b) between signal values at intervals of m samples to find this optimal m.'''
@@ -93,8 +93,8 @@ def AMDF(signal, sampleRate, b=1):
     # print(bins)
     minCorrelation = bins[1]/binCounts[1]
     minM = 1
-    for m in range(2, maxComparisionDistance+1):
-        if bins[m]/binCounts[m] <  minCorrelation:
+    for m in range(max(1, math.ceil(sampleRate/expectedMax)), min(maxComparisionDistance+1, math.ceil(sampleRate/expectedMin))):
+        if bins[m]/binCounts[m] < minCorrelation:
             minCorrelation = bins[m]/binCounts[m]
             minM = m
 
@@ -135,16 +135,33 @@ def resample(signal, oldSampleRate, newSampleRate):
 
 ## Prediction Functions
 
-def naiveFT(signal, sampleRate, isCustomFFT):
+def naiveFT(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000):
     '''A Naive Fourier-Transform Pitch Detection Method
     Predicts the frequency of a mono signal simply by picking the largest peak in the  Fourier-transform of the signal.'''
 
     freq_vector = np.fft.rfftfreq(len(signal), d=1/sampleRate)
-    mags = np.abs(fft(signal, isCustomFFT))
-    maxLog = max(mags)
-    return freq_vector[np.where(mags == maxLog)][0]
+    minExpectedBin = min(np.where(freq_vector >= expectedMin)[0])
+    maxExpectedBin = max(np.where(freq_vector <= expectedMax)[0])
 
-def cepstrum(signal, sampleRate, isCustomFFT):
+    mags = np.abs(fft(signal, isCustomFFT))
+
+    maxMag = 0
+    maxMagBin = 1
+    for i in range(max(1, minExpectedBin), min(len(mags), maxExpectedBin+1)):
+        if mags[i] > maxMag:
+            maxMag = mags[i]
+            maxMagBin = i
+
+    return freq_vector[maxMagBin]
+
+    # freq_vector = np.fft.rfftfreq(len(signal), d=1/sampleRate)
+    # mags = np.abs(fft(signal, isCustomFFT))
+    # maxLog = max(mags)
+    # print(np.where(mags == maxLog)[0])
+    # return freq_vector[np.where(mags == maxLog)][0]
+
+
+def cepstrum(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000):
     '''Cepstrum Pitch Detection
     Predicts the frequency of a mono signal by finding the period which most strongly correlates to the distance between peaks in the Fourier-transform of the signal.
     Assuming the peaks in the Fourier transform are located at harmonics of the signal, this period should represent the distance between the harmonics, i.e. the fundamental period.'''
@@ -155,7 +172,7 @@ def cepstrum(signal, sampleRate, isCustomFFT):
     freq_vector = np.fft.rfftfreq(len(signal), d=1/sampleRate)
     log_X = np.log(np.abs(fft(signal, isCustomFFT)))
 
-    maxLog = max(log_X)
+    # maxLog = max(log_X)
     # print(freq_vector[np.where(log_X == maxLog)])
 
     cepstrumBins = np.abs(fft(log_X, isCustomFFT))
@@ -169,26 +186,31 @@ def cepstrum(signal, sampleRate, isCustomFFT):
     # plt.subplot(2, 1, 2)
     # plt.plot(quefrencies[1:], cepstrumBins[1:])
     # plt.plot(range(len(cepstrumBins)-1), cepstrumBins[1:])
+
+    minExpectedBin = min(np.where(quefrencies >= 1/expectedMax)[0])
+    maxExpectedBin = max(np.where(quefrencies <= 1/expectedMin)[0])
     
-    maxBin = 0
+    maxBin = max(5, minExpectedBin)
     maxValue = 0
-    for b, val in enumerate(cepstrumBins):
-        if val > maxValue and b>5:
-            maxValue = val
-            maxBin = b
+    for i in range(max(5, minExpectedBin), min(len(cepstrumBins), maxExpectedBin+1)):
+        if cepstrumBins[i] > maxValue and cepstrumBins[i] < float("inf"):
+            maxValue = cepstrumBins[i]
+            maxBin = i
     # print(maxBin, quefrencies[maxBin])
     # plt.show()
     return 1/quefrencies[maxBin]
     # return sampleRate/maxBin
 
-def HPS(signal, sampleRate, isCustomFFT, numDownsamples):
+def HPS(signal, sampleRate, isCustomFFT, numDownsamples, expectedMin=20, expectedMax=20000):
     '''Harmonic Product Spectrum Pitch Detection
     Predicts the frequency of a mono signal by first computing (the magnitudes within) its Fourier-transform and then resampling (downsampling) this by factors of 1/2, 1/3, 1/4, etc. .
     Then we may multiply these downsampled versions and can expect a peak correlating to the fundamental frequency of the original signal.'''
     freq_vector = np.fft.rfftfreq(len(signal), d=1/sampleRate)
+    minExpectedBin = min(np.where(freq_vector >= expectedMin)[0])
+    maxExpectedBin = max(np.where(freq_vector <= expectedMax)[0])
     mags = np.abs(fft(signal, isCustomFFT))
 
-    resampledSpectra = [resample(mags, sampleRate, sampleRate/i) for i in range( 1,numDownsamples+1)]
+    resampledSpectra = [resample(mags, sampleRate, sampleRate/i) for i in range(1 ,numDownsamples+1)]
 
     for spectrum in resampledSpectra:
         for i in range(len(mags)):
@@ -196,14 +218,21 @@ def HPS(signal, sampleRate, isCustomFFT, numDownsamples):
                 break
             mags[i] *= spectrum[i]
 
-    maxBin = 0
-    maxValue = 0
-    for b, val in enumerate(mags):
-        if val > maxValue:
-            maxValue = val
-            maxBin = b
+    maxMag = 0
+    maxMagBin = 1
+    for i in range(max(1, minExpectedBin), min(len(mags), maxExpectedBin+1)):
+        if mags[i] > maxMag:
+            maxMag = mags[i]
+            maxMagBin = i
 
-    return freq_vector[maxBin]
+    # maxBin = 0
+    # maxValue = 0
+    # for b, val in enumerate(mags):
+    #     if val > maxValue:
+    #         maxValue = val
+    #         maxBin = b
+
+    return freq_vector[maxMagBin]
 
 
 #### Functions utilising all pitch detection algorithms
