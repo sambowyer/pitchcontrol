@@ -3,7 +3,7 @@ import matplotlib
 import matplotlib.pyplot as plt
 import numpy as np
 
-from pitchcontrol import getMidiNoteWithCents
+from helpers import getMidiNoteWithCents
 #metrics to check:
 #   (0) % error (based on Hz values)
 #   (1) absolute error in midiValue - since musical notes are distributed on Hz logarithmically this may make more sense than (1)

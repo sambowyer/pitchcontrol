@@ -1,5 +1,5 @@
 import testing
-from pitchcontrol import toMono
+from helpers import toMono
 import soundfile as sf
 
 signal, sampleRate = sf.read('wavs/guitarC3.wav')

@@ -1,6 +1,6 @@
-
 import fft
 import math
+from helpers import resample, getTrimmedMean
 import numpy as np 
 import matplotlib.pyplot as plt #for bug fixing and testing
 
@@ -119,20 +119,6 @@ def ifft(isCustomFFT):
 def magnitudeSquaredBins(bins):
     return [abs(i)*abs(i) for i in bins]
 
-def linearInterpolate(x1, x2, gamma):
-    return (x1 + (x2-x1)*gamma)
-
-def resample(signal, oldSampleRate, newSampleRate):
-    resampledSignal = []
-    for i in range(len(signal)):
-        resampleIndex = i*oldSampleRate/newSampleRate
-        if resampleIndex >= len(signal) - 1:
-            break
-        resampledSignal.append(linearInterpolate(signal[math.floor(resampleIndex)], signal[math.ceil(resampleIndex)], resampleIndex % 1))
-
-    return resampledSignal
-
-
 ## Prediction Functions
 
 def naiveFT(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000):
@@ -159,7 +145,6 @@ def naiveFT(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000):
     # maxLog = max(mags)
     # print(np.where(mags == maxLog)[0])
     # return freq_vector[np.where(mags == maxLog)][0]
-
 
 def cepstrum(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000):
     '''Cepstrum Pitch Detection
@@ -237,22 +222,7 @@ def HPS(signal, sampleRate, isCustomFFT, numDownsamples, expectedMin=20, expecte
 
 #### Functions utilising all pitch detection algorithms
 
-## Preliminary function
-
-def getTrimmedMean(data, trimSize):
-    '''returns the mean of the list 'data' excluding its smallest and largest elements.
-    The total proportion of the list to be excluded from the mean calculation is given by 'trimSize' - between 0 and 1.'''
-    if trimSize > 1:
-        return sum
-    sortedData = data.copy()
-    sortedData.sort()
-    trimIndices = [math.floor((len(data)-1)*trimSize), math.ceil((len(data)-1)*(1-trimSize))]
-    trimIndices.sort()
-    return sum(sortedData[trimIndices[0]:trimIndices[1]])/(trimIndices[1]-trimIndices[0])
-
-
 ## Function to return a dictionary of predictions from all algorithms
-
 def getAllPredictions(signal, sampleRate, b, isCustomFFT, numDownsamples):
     predictions = {"zerocross" : zerocross(signal, sampleRate), 
                    "autocorrelation" : autocorrelation(signal, sampleRate), 
