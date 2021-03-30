@@ -1,6 +1,8 @@
 from predict import zerocross, autocorrelation, AMDF, naiveFT, cepstrum, HPS
 import signalGenerator
+from PitchProfile import PitchProfile
 from helpers import *
+import soundfile as sf
 from timeit import default_timer as timer
 import os.path
 
@@ -301,7 +303,55 @@ def generatedSignalsTest(freqs = [50,100,200,300,400,440,500,800,1000,2000,4000,
         end = timer()
         print("sineHarmonics %sHz: %sHz (cepstrum) - took %ss" % (freq, pred, end-start))
 
-# expectedIntervalTest()
+def midiTest():
+    notesToTest = ["A0", "B0", "C1", "G1","D2","F#2","C#3","G#4","A4","E5","A#6","D#7","F7","B7","C8"]
+    freqsToTest = [25,50,78,110,169,200,220,350,430,439,440,441,600,900,1250,1700,2500,4000,7500,12500,16000,18000,20000]
+
+    for note in notesToTest:
+        print("NOTE: %s FREQ: %s MIDI: %s" % (note, noteNameToMidi(note), midiToFreq(noteNameToMidi(note))))
+
+    print()
+
+    for freq in freqsToTest:
+        printPitchInfo(freq)
+
+def generateInstrumentFrequencyRanges():
+    instrumentRanges = {"piano" : ["A0","C8"], "guitar" : ["E2","E6"], "cello" : ["C2","A5"], "violin" : ["G3","A7"],
+                        "voice" : ["F2","A5"], "bass guitar" : ["E1","E5"], "trumpet" : ["F#3","D6"]}
+    freqRanges = {}
+    freqRangesPlus250Cents = {}
+    for instrument in instrumentRanges:
+        freqRanges[instrument] = [noteNameToFreq(instrumentRanges[instrument][0]), noteNameToFreq(instrumentRanges[instrument][1])]
+        freqRangesPlus250Cents[instrument] = [midiToFreq(noteNameToMidi(instrumentRanges[instrument][0])-2.5), midiToFreq(noteNameToMidi(instrumentRanges[instrument][1])+2.5)]
+
+    for instrument in instrumentRanges:
+        print("%s - RANGE=%s RANGE+25s0cents=%s" % (instrument, freqRanges[instrument], freqRangesPlus250Cents[instrument]))
+
+def pitchProfileTest1():
+    filename = "uhhh-gentle-female-singing_B_major.wav"
+    sampleRate = sf.info("wavs/" + filename).samplerate
+    pp = PitchProfile("wavs/" + filename, sampleRate, "naiveFT", {"isCustomFFT" : False}, "voice", 2048, "female-ooh")
+    pp.writeLog("logs/" + pp.name + "EMPTY.log")
+    pp.analysePitch()
+    pp.printLog()
+    pp.writeLog("logs/" + pp.name + ".log")
+
+    filename = "choir-boy-solo-singing_150bpm_D_minor.wav"
+    sampleRate = sf.info("wavs/" + filename).samplerate
+    pp = PitchProfile("wavs/" + filename, sampleRate, "naiveFT", {"isCustomFFT" : False}, "voice", 2048, "choirboy")
+    pp.writeLog("logs/" + pp.name + "EMPTY.log")
+    pp.analysePitch()
+    pp.printLog()
+    pp.writeLog("logs/" + pp.name + ".log")
+
+    filename = "wee-spoken-vocal-fx_140bpm_C_minor.wav"
+    sampleRate = sf.info("wavs/" + filename).samplerate
+    pp = PitchProfile("wavs/" + filename, sampleRate, "HPS", {"isCustomFFT" : False, "numDownsamples" : 4}, "voice", 1024)
+    pp.analysePitch()
+    pp.printLog()
+    pp.writeLog("logs/" + pp.name + ".log")
+
+pitchProfileTest1()
 
 # printPitchInfo(440)
 
@@ -328,3 +378,4 @@ def generatedSignalsTest(freqs = [50,100,200,300,400,440,500,800,1000,2000,4000,
 # printPitchInfo(naiveFT(signalGenerator.getSaw(100,2048,44100), 44100, False))
 # printPitchInfo(cepstrum(signalGenerator.getSaw(100,2048,44100), 44100, False))
 # printPitchInfo(HPS(signalGenerator.getSaw(100,2048,44100), 44100, False, 4))
+

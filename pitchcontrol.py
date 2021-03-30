@@ -7,7 +7,6 @@ import math
 import circularBuffer
 import numpy as np
 from timeit import default_timer as timer
-
 import soundfile as sf
 
 #lowest possible frequency detection (realistically) is around sampleRate/CHUNK_SIZE
