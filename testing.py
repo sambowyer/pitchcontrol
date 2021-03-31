@@ -317,7 +317,7 @@ def midiTest():
 
 def generateInstrumentFrequencyRanges():
     instrumentRanges = {"piano" : ["A0","C8"], "guitar" : ["E2","E6"], "cello" : ["C2","A5"], "violin" : ["G3","A7"],
-                        "voice" : ["F2","A5"], "bass guitar" : ["E1","E5"], "trumpet" : ["F#3","D6"]}
+                        "voice" : ["F2","A5"], "bass guitar" : ["E1","E5"], "trumpet" : ["F#3","D6"], "flute" : ["C4","C7"]}
     freqRanges = {}
     freqRangesPlus250Cents = {}
     for instrument in instrumentRanges:
@@ -449,7 +449,7 @@ def customFFTTest2(freqs = [50,100,500,1000,5000,10000]):
 
             print()
 
-customFFTTest2()
+generateInstrumentFrequencyRanges()
 
 
 # printPitchInfo(440)

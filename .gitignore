@@ -1,8 +1,12 @@
 __pychache__/
 wavs/
 *.wav
+MIDI/
+*.mid
 logs/
 *.log
 *.pyc
+*.RPP
+*.RPP-bak
 .DS_Store
 .vscode/
