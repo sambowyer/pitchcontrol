@@ -1,4 +1,4 @@
-from predict import zerocross, autocorrelation, AMDF, naiveFT, cepstrum, HPS
+from predict import zerocross, autocorrelation, AMDF, naiveFT, cepstrum, HPS, fft
 import signalGenerator
 from PitchProfile import PitchProfile
 from helpers import *
@@ -351,7 +351,106 @@ def pitchProfileTest1():
     pp.printLog()
     pp.writeLog("logs/" + pp.name + ".log")
 
-pitchProfileTest1()
+def octaveTrickTest1():
+    print("CASES TO BE FIXED")
+    print("HPS - Saw 1000Hz")
+    print("Without octave trick: " + getPitchInfo(HPS(signalGenerator.getSaw(1000,2048,44100), 44100, False, 4, octaveTrick=False)))
+    print("With octave trick:    " + getPitchInfo(HPS(signalGenerator.getSaw(1000,2048,44100), 44100, False, 4, octaveTrick=True)))
+    print()
+
+    print("HPS - SineWith10Harmonics 700Hz")
+    print("Without octave trick: " + getPitchInfo(HPS(signalGenerator.getSineWithHarmonics(700,2048,44100,10), 44100, False, 4, octaveTrick=False)))
+    print("With octave trick:    " + getPitchInfo(HPS(signalGenerator.getSineWithHarmonics(700,2048,44100,10), 44100, False, 4, octaveTrick=True)))
+    print()
+
+    print("HPS - SineWith20Harmonics 700Hz")
+    print("Without octave trick: " + getPitchInfo(HPS(signalGenerator.getSineWithHarmonics(700,2048,44100,20), 44100, False, 4, octaveTrick=False)))
+    print("With octave trick:    " + getPitchInfo(HPS(signalGenerator.getSineWithHarmonics(700,2048,44100,20), 44100, False, 4, octaveTrick=True)))
+    print()
+
+    print()
+
+    print("CASES TO BE MAINTAINED")
+    print("HPS - Triangle 600Hz")
+    print("Without octave trick: " + getPitchInfo(HPS(signalGenerator.getTriangle(600,2048,44100), 44100, False, 4, octaveTrick=False)))
+    print("With octave trick:    " + getPitchInfo(HPS(signalGenerator.getTriangle(600,2048,44100), 44100, False, 4, octaveTrick=True)))
+    print()
+
+    print("HPS - Sine 500Hz")
+    print("Without octave trick: " + getPitchInfo(HPS(signalGenerator.getSine(500,2048,44100), 44100, False, 4, octaveTrick=False)))
+    print("With octave trick:    " + getPitchInfo(HPS(signalGenerator.getSine(500,2048,44100), 44100, False, 4, octaveTrick=True)))
+    print()
+
+    print("HPS - Square 40000Hz")
+    print("Without octave trick: " + getPitchInfo(HPS(signalGenerator.getSquare(4000,2048,44100), 44100, False, 4, octaveTrick=False)))
+    print("With octave trick:    " + getPitchInfo(HPS(signalGenerator.getSquare(4000,2048,44100), 44100, False, 4, octaveTrick=True)))
+    print()
+
+def customFFTTest1():
+    signal = signalGenerator.getSine(440,2048,44100)
+    npBins = fft(signal, False)
+    customBins = fft(signal, True)
+    # print(npBins.shape())
+    print(len(npBins), len(customBins))
+    for i in range(3):
+        print(npBins[i], customBins[i])
+    for i in range(3):
+        print(npBins[-i], customBins[-i])
+
+def customFFTTest2(freqs = [50,100,500,1000,5000,10000]):
+    for freq in freqs:
+        sine = signalGenerator.getSine(freq, 1024, 44100)
+        square = signalGenerator.getSquare(freq, 1024, 44100)
+        saw = signalGenerator.getSaw(freq, 1024, 44100)
+        triangle = signalGenerator.getTriangle(freq, 1024, 44100)
+        sineHarmonics = signalGenerator.getSineWithHarmonics(freq, 1024, 44100, 15)
+
+        signals = {"sine" : sine, "square" : square, "saw" : saw, "triangle" : triangle, "sineHarmonics" : sineHarmonics}
+
+        for signalType in signals:
+
+            signal = signals[signalType]
+
+            print("%s %sHz" % (signalType, freq))
+
+            start1 = timer()
+            pred1 = naiveFT(signal, 44100, False)
+            end1 = timer()
+
+            start2 = timer()
+            pred2 = naiveFT(signal, 44100, True)
+            end2 = timer()
+
+            print("naiveFT numpy vs CustomFFT:  %sHz (%ss)    %sHz (%ss)" % ('{:.4f}'.format(pred1).rjust(12), str(end1-start1).rjust(22,"0"), '{:.4f}'.format(pred2).rjust(12), str(end2-start2).rjust(22,"0")))
+
+            ####
+
+            start1 = timer()
+            pred1 = cepstrum(signal, 44100, False)
+            end1 = timer()
+
+            start2 = timer()
+            pred2 = cepstrum(signal, 44100, True)
+            end2 = timer()
+
+            print("Cepstrum numpy vs CustomFFT: %sHz (%ss)    %sHz (%ss)" % ('{:.4f}'.format(pred1).rjust(12), str(end1-start1).rjust(22,"0"), '{:.4f}'.format(pred2).rjust(12), str(end2-start2).rjust(22,"0")))
+
+            ####
+
+            start1 = timer()
+            pred1 = HPS(signal, 44100, False, 4)
+            end1 = timer()
+
+            start2 = timer()
+            pred2 = HPS(signal, 44100, True, 4)
+            end2 = timer()
+
+            print("HPS numpy vs CustomFFT:      %sHz (%ss)    %sHz (%ss)" % ('{:.4f}'.format(pred1).rjust(12), str(end1-start1).rjust(22,"0"), '{:.4f}'.format(pred2).rjust(12), str(end2-start2).rjust(22,"0")))
+
+            print()
+
+customFFTTest2()
+
 
 # printPitchInfo(440)
 

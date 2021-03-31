@@ -10,6 +10,7 @@ def getNoteName(freq):
     return ("A","A#","B","C","C#","D","D#","E","F","F#","G","G#")[(midiNote+3) % 12] + str(midiOctave)
 
 def getCents(freq):
+    '''Returns the number of cents that *freq* is away from the nearest in-tune note. This means the int returned is between -49 and 50 (inclusive).'''
     remainder = getMidiNoteWithCents(freq) % 1
     if remainder <= 0.5:
         return round(remainder * 100)

@@ -1,6 +1,6 @@
-import fft
+import customFFT
 import math
-from helpers import resample, getTrimmedMean
+from helpers import resample, getTrimmedMean, getMidiNoteWithCents
 import numpy as np 
 import matplotlib.pyplot as plt #for bug fixing and testing
 
@@ -106,13 +106,13 @@ def AMDF(signal, sampleRate, b=1, expectedMin=20, expectedMax=20000):
 
 def fft(signal, isCustomFFT):
     if isCustomFFT:
-        return fft.fft(signal)
+        return customFFT.fft(signal)
     else:
         return np.fft.rfft(signal)
 
-def ifft(isCustomFFT):
+def ifft(signal, isCustomFFT):
     if isCustomFFT:
-        return fft.ifft(signal)
+        return customFFT.ifft(signal)
     else:
         return np.fft.ifft(signal)
 
@@ -186,7 +186,7 @@ def cepstrum(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000)
     return 1/quefrencies[maxBin]
     # return sampleRate/maxBin
 
-def HPS(signal, sampleRate, isCustomFFT, numDownsamples, expectedMin=20, expectedMax=20000):
+def HPS(signal, sampleRate, isCustomFFT, numDownsamples, expectedMin=20, expectedMax=20000, octaveTrick=False):
     '''Harmonic Product Spectrum Pitch Detection
     Predicts the frequency of a mono signal by first computing (the magnitudes within) its Fourier-transform and then resampling (downsampling) this by factors of 1/2, 1/3, 1/4, etc. .
     Then we may multiply these downsampled versions and can expect a peak correlating to the fundamental frequency of the original signal.'''
@@ -210,12 +210,22 @@ def HPS(signal, sampleRate, isCustomFFT, numDownsamples, expectedMin=20, expecte
             maxMag = mags[i]
             maxMagBin = i
 
-    # maxBin = 0
-    # maxValue = 0
-    # for b, val in enumerate(mags):
-    #     if val > maxValue:
-    #         maxValue = val
-    #         maxBin = b
+    #ocassionaly HPS predicts an octave too high, so if the second highest peak is at approximately half the frequency of the highest (that is, an octave below)
+    #and the ratio of magnitudes between these two highest peaks is above 1/(2*numDownsamples), then predict the lower octave instead
+    # This trick is far from 100% effective in reducing octave errors but does prove useful in some cases
+    if octaveTrick: 
+        maxMag2 = 0
+        maxMag2Bin = 1
+        for i in range(max(1, minExpectedBin), min(len(mags), maxExpectedBin+1)):
+            if mags[i] > maxMag2 and i != maxMagBin:
+                maxMag2 = mags[i]
+                maxMag2Bin = i
+
+        # print(maxMag / maxMag)
+
+        # allow for 50 cent leeway either side of the true octave below the highest peak
+        if abs(getMidiNoteWithCents(freq_vector[maxMagBin]) - getMidiNoteWithCents(2*freq_vector[maxMag2Bin])) <= 0.5 and maxMag2/maxMag >= 0.1:
+            return freq_vector[maxMag2Bin]
 
     return freq_vector[maxMagBin]
 
