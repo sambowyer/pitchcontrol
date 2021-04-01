@@ -93,7 +93,7 @@ class PitchProfile:
 
 
     def analysePitch(self):
-        '''returns a list of pitch predictions for each chunk in this object's signal.'''
+        '''returns a list of pitch predictions for each block in this object's signal.'''
         start = timer()
 
         partialSignals = [toMono(sig) for sig in sf.blocks(self.location, blocksize=self.blockSize)]

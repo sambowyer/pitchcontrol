@@ -449,7 +449,38 @@ def customFFTTest2(freqs = [50,100,500,1000,5000,10000]):
 
             print()
 
-generateInstrumentFrequencyRanges()
+def signalGainTest1():
+    print("SINE 440Hz")
+    signal = signalGenerator.getSine(440, 22050, 44100)
+    print("min: %s   max: %s   %s percent clipped" % (min(signal), max(signal), proportionClipping(signal)*100))
+    sf.write("wavs/gainTests/440sine.wav", signal, 44100)
+
+    print("\nQUARTER GAIN")
+    signal = multiplyGain(signal, 0.25)
+    print("min: %s   max: %s   %s percent clipped" % (min(signal), max(signal), proportionClipping(signal)*100))
+    sf.write("wavs/gainTests/440sineQuarterGain.wav", signal, 44100)
+
+    print("\nADD WHITE NOISE")
+    signal = addGaussianWhiteNoise(signal, 0.002)
+    print("min: %s   max: %s   %s percent clipped" % (min(signal), max(signal), proportionClipping(signal)*100))
+    sf.write("wavs/gainTests/440sineQuarterGainWithNoise.wav", signal, 44100)
+
+    print("BOOST GAIN UNTIL CLIP")
+    signal = multiplyGainUntilClipping(signal)
+    print("min: %s   max: %s   %s percent clipped" % (min(signal), max(signal), proportionClipping(signal)*100))
+    sf.write("wavs/gainTests/440sineQuarterGainWthNoiseBoosted.wav", signal, 44100)
+    
+    print("DOUBLE GAIN")
+    signal = multiplyGain(signal, 2)
+    print("min: %s   max: %s   %s percent clipped" % (min(signal), max(signal), proportionClipping(signal)*100))
+    sf.write("wavs/gainTests/440sineQuarterGainWthNoiseBoostedTwice.wav", signal, 44100)
+
+    print("DOUBLE GAIN (again)")
+    signal = multiplyGain(signal, 2)
+    print("min: %s   max: %s   %s percent clipped" % (min(signal), max(signal), proportionClipping(signal)*100))
+    sf.write("wavs/gainTests/440sineQuarterGainWthNoiseBoostedThrice.wav", signal, 44100)
+    
+signalGainTest1()
 
 
 # printPitchInfo(440)

@@ -35,4 +35,4 @@ def generateInstrumentChromatics():
 
         writeMIDI(instrumentChromatics[instrument], "MIDI/%sChromatic.mid" % (instrument))
 
-generateInstrumentChromatics()
+# generateInstrumentChromatics()

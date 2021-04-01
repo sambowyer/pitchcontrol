@@ -1,4 +1,5 @@
 import math
+from numpy import random
 
 ## MIDI-based helpers
 def getMidiNoteWithCents(freq):
@@ -57,6 +58,53 @@ def resample(signal, oldSampleRate, newSampleRate):
 
     return resampledSignal
 
+def clipSignal(signal, minMagnitude=-1, maxMagnitude=1):
+    '''Clip a signal at values of *minMagnitude* and *maxMagnitude* - note that whilst these take default values -1 and 1 respectively, in order to conform with the values 
+    given by the soundfile module as well as signalGenerator.py, they can be changed since different modules may have different standards e.g. sample values given as integers between 2147483648 and 2147483647.'''
+    for i in range(len(signal)):
+        signal[i] = max(signal[i], minMagnitude)
+        signal[i] = min(signal[i], maxMagnitude)
+
+    return signal
+
+def multiplyGain(signal, scalar, clip=True, clipMin=-1, clipMax=1):
+    for i in range(len(signal)):
+        signal[i] *= scalar
+    
+    if clip:
+        return clipSignal(signal,clipMin, clipMax)
+
+    return signal
+    
+def multiplyGainUntilClipping(signal, clipMin=-1, clipMax=1):
+    scalarToMinClip = clipMin/min(signal)
+    scalarToMaxClip = clipMin/max(signal)
+    return multiplyGain(signal, min(abs(scalarToMinClip), abs(scalarToMaxClip)), True, clipMin, clipMax)
+
+def proportionClipping(signal, clipMin=-1, clipMax=1):
+    clipCount = 0
+    for i in signal:
+        if i == clipMin or i == clipMax:
+            clipCount += 1
+    return clipCount / len(signal)
+
+def addGaussianWhiteNoise(signal, std=0.05, clip=True, clipMin=-1, clipMax=1):
+    for i in range(len(signal)):
+        signal[i] += random.normal(0, std)
+
+    if clip:
+        return clipSignal(signal,clipMin, clipMax)
+
+    return signal
+
+# CONSIDER WHETHER TO KEEP THIS IN - window functions seem very interesting but it is a very big subject.
+#   To include JUST a hanning window and no other types of window functions may seem pointless/rather arbitrary.
+#   Plus it would likely require discussion in my report and I don't know whether I would be able to do it justice 
+#   especially since it is just 'an aside' and not really one of the main parts of this project.
+#   Though, perhaps it may be interesting to see if it does help with pitch detection - If it does (significantly) then 
+#   it may be worth keeping it in and trying my best to justify just using Hanning windows and no other window functions
+def getHanningWindow(length):
+    return [(math.sin(math.pi*i/length))**2 for i in range(length)]
 
 ## stats helpers
 def getTrimmedMean(data, trimSize):
