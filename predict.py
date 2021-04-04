@@ -1,6 +1,6 @@
 import customFFT
 import math
-from helpers import resample, getTrimmedMean, getMidiNoteWithCents
+from helpers import resample, getTrimmedMean, getMidiNoteWithCents, fft
 import numpy as np 
 import matplotlib.pyplot as plt #for bug fixing and testing
 
@@ -103,18 +103,6 @@ def AMDF(signal, sampleRate, b=1, expectedMin=20, expectedMax=20000):
 #### FREQUENCY-DOMAIN ALGORITHMS
 
 ## Preliminary sunctions for frequency-domain algorithms
-
-def fft(signal, isCustomFFT):
-    if isCustomFFT:
-        return customFFT.fft(signal)
-    else:
-        return np.fft.rfft(signal)
-
-def ifft(signal, isCustomFFT):
-    if isCustomFFT:
-        return customFFT.ifft(signal)
-    else:
-        return np.fft.ifft(signal)
 
 def magnitudeSquaredBins(bins):
     return [abs(i)*abs(i) for i in bins]

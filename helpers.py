@@ -1,5 +1,6 @@
 import math
-from numpy import random
+import numpy as np
+import customFFT
 
 ## MIDI-based helpers
 def getMidiNoteWithCents(freq):
@@ -58,6 +59,17 @@ def resample(signal, oldSampleRate, newSampleRate):
 
     return resampledSignal
 
+def stretch(signal, desiredLength):
+    '''Stretch out a signal to a new desired length (can be longer or shorter than the original signal) using linear interpolation. 
+    Note that this will change the frequency of the signal.'''
+    ratio = len(signal)/desiredLength
+    interpolatedIndices = [i*ratio for i in range(desiredLength)]
+    stretchedSignal = []
+    for index in interpolatedIndices:
+        stretchedSignal.append(linearInterpolate(signal[math.floor(index)], signal[math.ceil(index)], index % 1))
+
+    return stretchedSignal
+
 def clipSignal(signal, minMagnitude=-1, maxMagnitude=1):
     '''Clip a signal at values of *minMagnitude* and *maxMagnitude* - note that whilst these take default values -1 and 1 respectively, in order to conform with the values 
     given by the soundfile module as well as signalGenerator.py, they can be changed since different modules may have different standards e.g. sample values given as integers between 2147483648 and 2147483647.'''
@@ -78,19 +90,19 @@ def multiplyGain(signal, scalar, clip=True, clipMin=-1, clipMax=1):
     
 def multiplyGainUntilClipping(signal, clipMin=-1, clipMax=1):
     scalarToMinClip = clipMin/min(signal)
-    scalarToMaxClip = clipMin/max(signal)
+    scalarToMaxClip = clipMax/max(signal)
     return multiplyGain(signal, min(abs(scalarToMinClip), abs(scalarToMaxClip)), True, clipMin, clipMax)
 
 def proportionClipping(signal, clipMin=-1, clipMax=1):
     clipCount = 0
     for i in signal:
-        if i == clipMin or i == clipMax:
+        if i <= clipMin or i >= clipMax:
             clipCount += 1
     return clipCount / len(signal)
 
 def addGaussianWhiteNoise(signal, std=0.05, clip=True, clipMin=-1, clipMax=1):
     for i in range(len(signal)):
-        signal[i] += random.normal(0, std)
+        signal[i] += np.random.normal(0, std)
 
     if clip:
         return clipSignal(signal,clipMin, clipMax)
@@ -105,6 +117,34 @@ def addGaussianWhiteNoise(signal, std=0.05, clip=True, clipMin=-1, clipMax=1):
 #   it may be worth keeping it in and trying my best to justify just using Hanning windows and no other window functions
 def getHanningWindow(length):
     return [(math.sin(math.pi*i/length))**2 for i in range(length)]
+
+def fft(signal, isCustomFFT, fullLength=False):
+    if isCustomFFT:
+        return customFFT.fft(signal, fullLength)
+    else:
+        return np.fft.rfft(signal)
+
+def ifft(signal, isCustomFFT, fullLength=False):
+    if isCustomFFT:
+        return customFFT.ifft(signal, fullLength)
+    else:
+        return np.fft.ifft(signal)
+
+def STFT(signal, windowSize, overlap, isCustomFFT = False, windowFunction=None):
+    if windowFunction == None:
+        windowFunction = [1 for i in range(windowSize)]
+    elif len(windowFunction) != windowSize:
+        windowFunction = stretch(windowFunction, windowSize)
+
+    N = len(signal)
+    transforms = []
+    startIndex = 0
+    while startIndex + windowSize <= N:
+        transforms.append(fft([signal[startIndex+i]*windowFunction[i] for i in range(windowSize)], isCustomFFT))
+        startIndex += windowSize - overlap
+
+    return transforms
+    
 
 ## stats helpers
 def getTrimmedMean(data, trimSize):

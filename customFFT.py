@@ -1,8 +1,10 @@
 import cmath
 
-def fft(signal):
+def fft(signal, fullLength=False):
     bins = [re+0j for re in signal]
     fftRecurse(bins)
+    if fullLength:
+        return bins
     return bins[:1+len(bins)//2] #to conform to np.fft practices
 
 def fftRecurse(data):
@@ -21,5 +23,6 @@ def fftRecurse(data):
             data[k + N//2] = even[k] - t
     
 
-def ifft(signal):
-    pass
+def ifft(bins, fullLength=False):
+    conjugateBins = [x.conjugate() for x in bins]
+    return [x.conjugate()/len(bins) for x in fft(conjugateBins, fullLength)]

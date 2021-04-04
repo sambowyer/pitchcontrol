@@ -18,20 +18,23 @@ import soundfile as sf
 instrumentRanges = {"piano" : [23.8,4836.32], "guitar" : [71.33,1523.34], "cello" : [56.51,1016.71], "violin" : [169.64,4066.84], "voice" : [75.57,1016.71], "bass guitar" : [35.66,761.67], "trumpet":[160.12,1357.15], "flute":[226.45,2418.16]}
 
 class PitchProfile:
-    def __init__(self, location, sampleRate, detectionMode, detectionParams, instrument=None, blockSize=2048, customName=None):
+    def __init__(self, location, sampleRate, detectionMode, detectionParams, instrument=None, blockSize=2048, overlap=1024, windowFunction=None, customName=None):
         self.location = location #location of the file corresponding to this pitchProfile object
 
         # self.signal = signal #array containing the signal (may or may not be mono)
         self.sampleRate = sampleRate #sampleRate of the signal
 
         self.detectionMode = detectionMode #pitch detectino algorithm to use in analysing the pitch of the signal
-        self.blockSize = blockSize #size of chunks by which the signal is split up into and pitch is found individually for
-        # self.overlap = overlap #amount by which chunks overlap
-
         self.detectionParams = detectionParams #dictionary containing relevant parameters for whichever pitch detection algorithm is being used
 
         self.instrument = instrument
         self.setExpectedFrequencyRange(instrument=self.instrument)
+
+        self.blockSize = blockSize #size of chunks by which the signal is split up into and pitch is found individually for
+        self.overlap = overlap #amount by which chunks overlap
+        self.windowFunction = windowFunction
+        if self.windowFunction == None:
+            self.windowFunction = [1 for i in range(self.blockSize)] # defaults to a rectangular window
 
         if customName == None:
             self.name = location.split("/")[-1]
@@ -64,7 +67,7 @@ class PitchProfile:
         frameCount = 0
         for prediction in self.pitchData:
             log += "%s-%s: %s\n" % (frameCount, frameCount+self.blockSize, getPitchInfo(prediction))
-            frameCount += self.blockSize
+            frameCount += self.blockSize - self.overlap
 
         return log
 
@@ -96,10 +99,10 @@ class PitchProfile:
         '''returns a list of pitch predictions for each block in this object's signal.'''
         start = timer()
 
-        partialSignals = [toMono(sig) for sig in sf.blocks(self.location, blocksize=self.blockSize)]
+        partialSignals = [toMono(sig) for sig in sf.blocks(self.location, blocksize=self.blockSize, overlap=self.overlap)]
         pitchData = []
         for sig in partialSignals:
-            pitchData.append(self.predictPitch(sig))
+            pitchData.append(self.predictPitch([sig[i]*self.windowFunction[i] for i in range(self.blockSize)]))
 
         end = timer()
 
