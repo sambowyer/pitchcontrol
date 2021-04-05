@@ -492,16 +492,28 @@ def phaseVocoderTest1():
     # sf.write("wavs/phaseVocoderTests/880sineWithHarmonicsHopefully.wav", shifted, 44100)
 
 
-    # signal, sampleRate = sf.read("wavs/uhhh-gentle-female-singing_B_major.wav")
-    # signal = toMono(signal)
-    # # signal = signalGenerator.getSineWithHarmonics(440, 2048*100, 44100,25)
-    # sf.write("wavs/phaseVocoderTests/female-ooh.wav", signal, sampleRate)
+    signal, sampleRate = sf.read("wavs/uhhh-gentle-female-singing_B_major.wav")
+    signal = toMono(signal)
+    # signal = signalGenerator.getSineWithHarmonics(440, 2048*100, 44100,25)
+    sf.write("wavs/phaseVocoderTests/female-ooh.wav", signal, sampleRate)
     
-    # stretched = RECURSIVEphaseVocoderStretch(signal, sampleRate, 2**(1/12), 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
-    # sf.write("wavs/phaseVocoderTests/female-oohStretched.wav", stretched, sampleRate)
+    stretched = RECURSIVEphaseVocoderStretch(signal, sampleRate, 2**(4/12), 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
+    sf.write("wavs/phaseVocoderTests/female-oohStretched.wav", stretched, sampleRate)
 
-    # shifted = phaseVocoderPitchShift(signal, sampleRate, 2**(1/12), 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
-    # sf.write("wavs/phaseVocoderTests/female-oohShiftedHopefully.wav", shifted, sampleRate)
+    shifted = phaseVocoderPitchShift(signal, sampleRate, 2**(4/12), 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
+    sf.write("wavs/phaseVocoderTests/female-oohShiftedHopefully.wav", shifted, sampleRate)
+    
+    
+    signal, sampleRate = sf.read("wavs/bruh.wav")
+    signal = toMono(signal)
+    # signal = signalGenerator.getSineWithHarmonics(440, 2048*100, 44100,25)
+    sf.write("wavs/phaseVocoderTests/bruh.wav", signal, sampleRate)
+    
+    stretched = RECURSIVEphaseVocoderStretch(signal, sampleRate, 2**(4/12), 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
+    sf.write("wavs/phaseVocoderTests/bruhStretched.wav", stretched, sampleRate)
+
+    shifted = phaseVocoderPitchShift(signal, sampleRate, 2**(4/12), 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
+    sf.write("wavs/phaseVocoderTests/bruhShiftedHopefully.wav", shifted, sampleRate)
     
 
     # signal, sampleRate = sf.read("wavs/wee.wav")
@@ -530,30 +542,30 @@ def phaseVocoderTest1():
     # sf.write("wavs/phaseVocoderTests/guitarC3 croppedShiftedHopefully.wav", shifted, sampleRate)
 
     
-    signal, sampleRate = sf.read("wavs/clar.wav")
+    # signal, sampleRate = sf.read("wavs/clar.wav")
+    # # signal = toMono(signal) #already mono
+    # # signal = signalGenerator.getSineWithHarmonics(440, 2048*100, 44100,25)
+    # sf.write("wavs/phaseVocoderTests/clar.wav", signal, sampleRate)
+    
+    # # stretched = RECURSIVEphaseVocoderStretch(signal, sampleRate, 2, 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
+    # # sf.write("wavs/phaseVocoderTests/guitarC3 croppedStretched.wav", stretched, sampleRate)
+
+    # shifted = phaseVocoderPitchShift(signal, sampleRate, 2**(-12/12), 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
+    # print("shifting done")
+    # sf.write("wavs/phaseVocoderTests/clarShiftedHopefully.wav", shifted, sampleRate)
+
+
+    # signal, sampleRate = sf.read("wavs/bowlc6.wav")
     # signal = toMono(signal) #already mono
-    # signal = signalGenerator.getSineWithHarmonics(440, 2048*100, 44100,25)
-    sf.write("wavs/phaseVocoderTests/clar.wav", signal, sampleRate)
+    # # signal = signalGenerator.getSineWithHarmonics(440, 2048*100, 44100,25)
+    # sf.write("wavs/phaseVocoderTests/bowlc6.wav", signal, sampleRate)
     
-    # stretched = RECURSIVEphaseVocoderStretch(signal, sampleRate, 2, 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
-    # sf.write("wavs/phaseVocoderTests/guitarC3 croppedStretched.wav", stretched, sampleRate)
+    # # stretched = RECURSIVEphaseVocoderStretch(signal, sampleRate, 2, 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
+    # # sf.write("wavs/phaseVocoderTests/guitarC3 croppedStretched.wav", stretched, sampleRate)
 
-    shifted = phaseVocoderPitchShift(signal, sampleRate, 2**(1/12), 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
-    print("shifting done")
-    sf.write("wavs/phaseVocoderTests/clarShiftedHopefully.wav", shifted, sampleRate)
-
-
-    signal, sampleRate = sf.read("wavs/bowlc6.wav")
-    signal = toMono(signal) #already mono
-    # signal = signalGenerator.getSineWithHarmonics(440, 2048*100, 44100,25)
-    sf.write("wavs/phaseVocoderTests/bowlc6.wav", signal, sampleRate)
-    
-    # stretched = RECURSIVEphaseVocoderStretch(signal, sampleRate, 2, 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
-    # sf.write("wavs/phaseVocoderTests/guitarC3 croppedStretched.wav", stretched, sampleRate)
-
-    shifted = phaseVocoderPitchShift(signal, sampleRate, 2**(1/12), 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
-    print("shifting done")
-    sf.write("wavs/phaseVocoderTests/bowlc6ShiftedHopefully.wav", shifted, sampleRate)
+    # shifted = phaseVocoderPitchShift(signal, sampleRate, 2**(1/12), 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
+    # print("shifting done")
+    # sf.write("wavs/phaseVocoderTests/bowlc6ShiftedHopefully.wav", shifted, sampleRate)
 
     # # # wavs/instrumentSamples/LABSPiano/LABSPianoA4.wav
     # signal, sampleRate = sf.read("wavs/instrumentSamples/LABSPiano/LABSPianoA4.wav")
@@ -568,6 +580,24 @@ def phaseVocoderTest1():
     # print("shifting done")
     # sf.write("wavs/phaseVocoderTests/LABSPianoA4C4ShiftedHopefully.wav", shifted, sampleRate)
 
+def phaseVocoderTest2():
+    signal, sampleRate = sf.read("wavs/clar.wav")
+    sf.write("wavs/phaseVocoderTests/phasinessTest/clar.wav", signal, sampleRate)
+
+    stretched = RECURSIVEphaseVocoderStretch(signal, sampleRate, 2**(1/12), 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
+    sf.write("wavs/phaseVocoderTests/phasinessTest/clarStretched.wav", stretched, sampleRate)
+    
+    shifted = phaseVocoderPitchShift(signal, sampleRate, 2**(1/12), 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
+    print("shifting done")
+    sf.write("wavs/phaseVocoderTests/phasinessTest/clarShiftedUp.wav", shifted, sampleRate)
+
+
+    compressed = RECURSIVEphaseVocoderStretch(signal, sampleRate, 2**(-1/12), 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
+    sf.write("wavs/phaseVocoderTests/phasinessTest/clarCompressed.wav", compressed, sampleRate)
+
+    shifted = phaseVocoderPitchShift(signal, sampleRate, 2**(-1/12), 2048, 1536, isCustomFFT = True, windowFunction=getHanningWindow(2048))
+    print("shifting done")
+    sf.write("wavs/phaseVocoderTests/phasinessTest/clarShiftedDown.wav", shifted, sampleRate)
 
 phaseVocoderTest1()
 

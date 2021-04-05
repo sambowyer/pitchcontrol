@@ -82,8 +82,8 @@ def phaseVocoderStretch(signal, sampleRate, scalingFactor, windowLength, overlap
     return newSignal
     
 def addPartialNewSignal(newSignal, frameStartIndex, freq_vector, hopIn, hopOut, numFrame, signal, sampleRate, scalingFactor, windowLength, overlapLength, isCustomFFT = False, windowFunction=None):
-    if windowFunction == None:
-        windowFunction = [1 for i in range(windowLength)]
+    # if windowFunction == None:
+    #     windowFunction = [1 for i in range(windowLength)]
     if frameStartIndex <= 0:
         print("fin recursion",frameStartIndex,numFrame)
         # bins = fft([signal[frameStartIndex+i]*windowFunction[i] for i in range(windowLength)], isCustomFFT, True)
@@ -108,47 +108,52 @@ def addPartialNewSignal(newSignal, frameStartIndex, freq_vector, hopIn, hopOut, 
         phaseOut = []
 
         for i in range(len(bins)):
+            #guitar guy
             # trueFreq = freq_vector[i] + ((((phaseIn[i] - prevPhaseIn[i]) / deltaT_in) - freq_vector[i] + math.pi) % (2*math.pi)) - math.pi
             # newPhase = prevPhaseOut[i] + trueFreq*deltaT_out
 
             
-            trueFreqPrediction = (phaseIn[i] - prevPhaseIn[i])/(2*math.pi*deltaT_in)
-            newPrediction = trueFreqPrediction
-            below = trueFreqPrediction < freq_vector[i]
-            n=0
-            while below == True:
-                newPrediction = trueFreqPrediction + 1/deltaT_in
-                if newPrediction > freq_vector[i]:
-                    below = False
-                else:
-                    trueFreqPrediction = newPrediction
-                    n += 1
-            if freq_vector[i] - trueFreqPrediction < newPrediction - freq_vector[i]:
-                trueFreq = trueFreqPrediction
-            else:
-                trueFreq = newPrediction
-                n += 1
-            newPhase = prevPhaseOut[i] + 2*math.pi*trueFreq*deltaT_in + (abs(n-i)%2)*math.pi
+            # trueFreqPrediction = (phaseIn[i] - prevPhaseIn[i])/(2*math.pi*deltaT_in)
+            # newPrediction = trueFreqPrediction
+            # below = trueFreqPrediction < freq_vector[i]
+            # n=0
+            # while below == True:
+            #     newPrediction = trueFreqPrediction + 1/deltaT_in
+            #     if newPrediction > freq_vector[i]:
+            #         below = False
+            #     else:
+            #         trueFreqPrediction = newPrediction
+            #         n += 1
+            # if freq_vector[i] - trueFreqPrediction < newPrediction - freq_vector[i]:
+            #     trueFreq = trueFreqPrediction
+            # else:
+            #     trueFreq = newPrediction
+            #     n += 1
+            # newPhase = prevPhaseOut[i] + 2*math.pi*trueFreq*deltaT_in + (abs(n-i)%2)*math.pi
 
 
-            ### BEST
+            ### BEST matlab
             # trueFreq = (phaseIn[i] - prevPhaseIn[i] + 2*math.pi*i)/(2*math.pi*(hopIn/sampleRate))
             # newPhase = (prevPhaseOut[i] + 2*math.pi*trueFreq*(hopIn/sampleRate)) + ((i+1)%2)*math.pi
 
-
+            #matlab guy
             # extraPhase = phaseIn[i] - prevPhaseIn[i] - 2*math.pi*hopIn*i/windowLength
             # extraPhase -= round(extraPhase/(2*math.pi))*2*math.pi
             # extraPhase = (extraPhase+2*math.pi*hopIn*i/windowLength)*scalingFactor
             # newPhase = prevPhaseOut[i] + extraPhase
 
-            # numCyclesToTrueFreq = round(deltaT_in*freq_vector[i] - (phaseIn[i] - prevPhaseIn[i])/(2*math.pi))
-            # trueFreq = (phaseIn[i] - prevPhaseIn[i] + 2*math.pi*numCyclesToTrueFreq)/(2*math.pi*deltaT_in)
-            # newPhase = prevPhaseOut[i] + 2*math.pi*trueFreq*deltaT_in
+            #paper guy (rainbow guy) but interpreted
+            numCyclesToTrueFreq = round(deltaT_in*freq_vector[i] - (phaseIn[i] - prevPhaseIn[i])/(2*math.pi))
+            trueFreq = (phaseIn[i] - prevPhaseIn[i] + 2*math.pi*numCyclesToTrueFreq)/(2*math.pi*deltaT_in)
+            newPhase = prevPhaseOut[i] + 2*math.pi*trueFreq*deltaT_in
 
-            #2nd best zynaptiq
+            #2nd best? zynaptiq
             # trueFreq = (sampleRate/windowLength)*(i + phaseIn[i]*(windowLength/overlapLength)/(2*math.pi))
             # newPhase = (prevPhaseOut[i] + 2*math.pi*trueFreq*(hopIn/sampleRate)) + (i%2)*math.pi
             # newPhase = prevPhaseOut[i] + trueFreq*deltaT_in
+
+            #3rd best? bowl guy
+            # newPhase = (prevPhaseOut[i] + phaseIn[i] - prevPhaseIn[i]) % 2*math.pi
 
             phaseOut.append(newPhase)
             # bins[i] = changePhase(bins[i], newPhase)
@@ -162,14 +167,18 @@ def addPartialNewSignal(newSignal, frameStartIndex, freq_vector, hopIn, hopOut, 
         # newPartialSignal = ifft(bins, isCustomFFT, True)
         # print(len(newPartialSignal), newPartialSignal[0])
         # print(frameStartIndex)
-        # print(len(newSignal))
+        # print(len(newPartialSignal))
         # print(frameStartIndex,frameStartIndex+windowLength)
         # print(frameStartIndex+numFrame*(hopOut - hopIn), frameStartIndex+numFrame*(hopOut - hopIn)+windowLength)
-        for i in range(frameStartIndex, frameStartIndex + windowLength):
-            
-            newSignal[i+numFrame*(hopOut - hopIn)] += newPartialSignal[i%windowLength]
+
+        # for i in range(frameStartIndex, frameStartIndex + windowLength):
+        #     newSignal[i+numFrame*(hopOut - hopIn)] += newPartialSignal[i%windowLength]
             # newSignal[i] += abs(newPartialSignal[i%windowLength])
 
+        for i in range(windowLength):
+            # print(i+numFrame*hopOut)
+            newSignal[i+numFrame*hopOut] += newPartialSignal[i]
+        # print("frame done")
         return phaseIn, phaseOut
 
 
@@ -178,9 +187,12 @@ def RECURSIVEphaseVocoderStretch(signal, sampleRate, scalingFactor, windowLength
     hopOut = round(hopIn * scalingFactor)
 
     numFrames = ((len(signal)-windowLength)//(hopIn)) +1
-    # print("numframes", numFrames)
+    print("numframes", numFrames)
+    print(math.ceil(len(signal)*scalingFactor), (numFrames-1)*hopOut+windowLength)
     finalFrameStartIndex = hopIn * (numFrames-1)
-    newSignal = [0 for i in range(math.ceil(len(signal)*scalingFactor))]
+    # newSignal = [0 for i in range(math.ceil(len(signal)*scalingFactor))]
+    newSignal = [0 for i in range((numFrames)*hopOut+windowLength)]
+
     # print(len(newSignal))
     freq_vector = np.fft.fftfreq(windowLength, d=1/sampleRate)
     # freq_vector = [i/sampleRate for i in range(windowLength)]

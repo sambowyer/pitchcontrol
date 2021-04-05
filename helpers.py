@@ -51,11 +51,11 @@ def linearInterpolate(x1, x2, gamma):
 
 def resample(signal, oldSampleRate, newSampleRate):
     resampledSignal = []
-    for i in range(len(signal)):
-        resampleIndex = i*oldSampleRate/newSampleRate
-        if resampleIndex >= len(signal) - 1:
-            break
+    step = oldSampleRate/newSampleRate
+    resampleIndex = 0
+    while resampleIndex < len(signal)-1:
         resampledSignal.append(linearInterpolate(signal[math.floor(resampleIndex)], signal[math.ceil(resampleIndex)], resampleIndex % 1))
+        resampleIndex += step
 
     return resampledSignal
 
@@ -116,7 +116,7 @@ def addGaussianWhiteNoise(signal, std=0.05, clip=True, clipMin=-1, clipMax=1):
 #   Though, perhaps it may be interesting to see if it does help with pitch detection - If it does (significantly) then 
 #   it may be worth keeping it in and trying my best to justify just using Hanning windows and no other window functions
 def getHanningWindow(length):
-    return [(math.sin(math.pi*i/length))**2 for i in range(length)]
+    return [(math.sin(math.pi*i/(length-1)))**2 for i in range(length)]
 
 def fft(signal, isCustomFFT, fullLength=False):
     if isCustomFFT:
