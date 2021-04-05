@@ -21,7 +21,6 @@ class PitchProfile:
     def __init__(self, location, sampleRate, detectionMode, detectionParams, instrument=None, blockSize=2048, overlap=1024, windowFunction=None, customName=None):
         self.location = location #location of the file corresponding to this pitchProfile object
 
-        # self.signal = signal #array containing the signal (may or may not be mono)
         self.sampleRate = sampleRate #sampleRate of the signal
 
         self.detectionMode = detectionMode #pitch detectino algorithm to use in analysing the pitch of the signal
@@ -41,7 +40,6 @@ class PitchProfile:
         else:
             self.name = customName
 
-        # self.pitchData = self.analyse()
         self.pitchData = []
 
         self.analysisTime = 0
@@ -78,6 +76,15 @@ class PitchProfile:
         with open(writeLocation, "w") as f:
             f.write(self.getLog())
 
+    def getIndexedPitchData(self):
+        '''Returns list of sublists of the form
+                [blockStartIndex, blockEndIndex, pitchPrediction]
+            for each block in self.pitchData, where:
+                blockStartIndex = index within the whole signal that the block begins at
+                blockEndIndex   = index within the whole signal that the block ends at
+                pitchPrediction = pitch prediction (in Hz) for this block'''
+        return [[i*(self.blockSize-self.overlap), i*(self.blockSize-self.overlap)+self.blockSize, self.pitchData[i]] for i in range(len(self.pitchData))]
+
     def predictPitch(self, partialSignal):
         if self.detectionMode == "zerocross":
             return zerocross(partialSignal, self.sampleRate)
@@ -98,8 +105,11 @@ class PitchProfile:
     def analysePitch(self):
         '''returns a list of pitch predictions for each block in this object's signal.'''
         start = timer()
+        if sf.info(self.location).channels > 1:
+            partialSignals = [toMono(sig) for sig in sf.blocks(self.location, blocksize=self.blockSize, overlap=self.overlap)]
+        else:
+            partialSignals = sf.blocks(self.location, blocksize=self.blockSize, overlap=self.overlap)
 
-        partialSignals = [toMono(sig) for sig in sf.blocks(self.location, blocksize=self.blockSize, overlap=self.overlap)]
         pitchData = []
         for sig in partialSignals:
             pitchData.append(self.predictPitch([sig[i]*self.windowFunction[i] for i in range(self.blockSize)]))

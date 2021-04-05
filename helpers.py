@@ -43,8 +43,8 @@ def printPitchInfo(freq):
 
 ## signal-based helpers
 def toMono(signal):
-    if type(signal[0] == list):
-        return [sum(channels) for channels in signal]
+    '''requires the signal to not already be in mono'''
+    return [sum(channels) for channels in signal]
 
 def linearInterpolate(x1, x2, gamma):
     return (x1 + (x2-x1)*gamma)

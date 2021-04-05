@@ -1,242 +1,105 @@
 from helpers import *
 import math, cmath
-import customFFT
 import numpy as np 
 
 def phase(a):
     phase = cmath.phase(a)
-    # if phase < 0:
-    #     phase += 2*math.pi
     return phase
 
-def changePhase(a, newPhase):
-    return abs(a)*(math.e ** ((0+1j)*newPhase))
+def phaseVocoderStretch(signal, sampleRate, scalingFactor, windowLength, overlapLength, windowFunction=None):
+    if windowFunction == None:
+        windowFunction = [1 for i in range(windowLength)]
 
-def unitStep(x):
-    if x < 0:
-        return 0
-    else:
-        return 1
+    hopIn = windowLength - overlapLength
+    hopOut = round(hopIn * scalingFactor)
+    deltaT_in = hopIn/sampleRate
+    deltaT_out= hopOut/sampleRate
 
-def fullFFT(signal, isCustomFFT):
-    if isCustomFFT:
-        bins = customFFT.fft(signal)
-    else:
-        bins = np.fft.rfft(signal)
-    return bins + bins[::-1]
+    numFrames = ((len(signal)-windowLength)//(hopIn)) +1
+    finalFrameStartIndex = hopIn * (numFrames-1)
+    frameStartIndex = 0
 
-def fullIFFT(bins, isCustomFFT):
-    if isCustomFFT:
-        signal = customFFT.ifft(bins)
-    else:
-        signal = np.fft.irfft(bins[:len(bins)//2])
-    return signal
+    newSignal = [0 for i in range((numFrames)*hopOut+windowLength)]
 
-def phaseVocoderStretch(signal, sampleRate, scalingFactor, windowLength, overlapLength, isCustomFFT = False, windowFunction=None):
-    #Condsider each element of this array as a 'frame' of the signal
-    stft_in = STFT(signal, windowLength, overlapLength, isCustomFFT, windowFunction)
-    freq_vector = np.fft.rfftfreq(windowLength, d=1/sampleRate)
+    freq_vector = np.fft.fftfreq(windowLength, d=1/sampleRate)
 
-    hop_In = windowLength - overlapLength
-    hop_Out = hop_In * scalingFactor
+    #analysis of first frame
+    bins = np.fft.rfft([signal[frameStartIndex+i]*windowFunction[i] for i in range(windowLength)])
+    phaseIn = [phase(a) for a in bins]
+    phaseOut = phaseIn
+    #synthesis of first frame (no changes made)
+    for i in range(frameStartIndex, frameStartIndex+windowLength):
+        newSignal[i] += signal[i]
 
-    deltaT_in = hop_In / sampleRate
-    deltaT_out = hop_Out / sampleRate
+    #now for the analysis and synthesis of all other frames
+    for numFrame in range(1,numFrames):
+        frameStartIndex += windowLength-overlapLength
+        prevPhaseIn = phaseIn
+        prevPhaseOut = phaseOut
 
-    trueBinFrequencies = [stft_in[0]]
-
-    for frameIndex in range(1, len(stft_in)):
-        trueBinFrequencies.append([])
-        for binIndex in range(len(stft_in[frameIndex])):
-            freqShift = ((phase(stft_in[frameIndex][binIndex]) - phase(stft_in[frameIndex-1][binIndex])) / deltaT_in) - freq_vector[binIndex]
-            trueFreq = freq_vector[binIndex] + ((freqShift + math.pi) % 2*math.pi) - math.pi 
-            trueBinFrequencies[frameIndex].append(trueFreq)
-
-    newPhases = [[phase(x) for x in stft_in[0]]]
-
-    for frameIndex in range(1, len(stft_in)):
-        newPhases.append([])
-        for binIndex in range(len(stft_in[frameIndex])):
-            newPhase = newPhases[frameIndex-1] + deltaT_out * trueBinFrequencies[frameIndex][binIndex]
-            newPhases[frameIndex].append(newPhase)
-
-    stft_out = [stft_in[0]]
-
-    for frameIndex in range(1, len(stft_in)):
-        stft_out.append([])
-        for binIndex in range(len(stft_in[frameIndex])):
-            stft_out[frameIndex].append(changePhase(stft_in[frameIndex][binIndex], newPhases[frameIndex][binIndex]))
-
-    inverse_stft_out = [ifft(window, isCustomFFT) for window in stft_out]
-
-    newSignal = []
-    newSignalIndex = 0
-    newSignalFinished = False
-
-    for newSignalIndex in range(math.floor(len(signal) * scalingFactor)):
-        newSignalPointValue = 0
-        for frameIndex, frame in enumerate(inverse_stft_out):
-            precedingFrameIndex = newSignalIndex - frameIndex*hop_out
-            newSignalPointValue += frame[newSignalIndex - frameIndex*hop_out]*(unitStep(precedingFrameIndex) - unitStep(precedingFrameIndex - windowLength))
-
-    return newSignal
-    
-def addPartialNewSignal(newSignal, frameStartIndex, freq_vector, hopIn, hopOut, numFrame, signal, sampleRate, scalingFactor, windowLength, overlapLength, isCustomFFT = False, windowFunction=None):
-    # if windowFunction == None:
-    #     windowFunction = [1 for i in range(windowLength)]
-    if frameStartIndex <= 0:
-        print("fin recursion",frameStartIndex,numFrame)
-        # bins = fft([signal[frameStartIndex+i]*windowFunction[i] for i in range(windowLength)], isCustomFFT, True)
-        bins = np.fft.rfft([signal[frameStartIndex+i]*windowFunction[i] for i in range(windowLength)])
-        # print(bins[5])
-        phaseIn = [phase(a) for a in bins]
-        # phaseIn = [0 for a in bins]
-        for i in range(frameStartIndex, frameStartIndex+windowLength):
-            newSignal[i] += signal[i]
-        return phaseIn, phaseIn
-    else:
-        prevPhaseIn, prevPhaseOut = addPartialNewSignal(newSignal, frameStartIndex-hopIn, freq_vector, hopIn, hopOut, numFrame-1, signal, sampleRate, scalingFactor, windowLength, overlapLength, isCustomFFT, windowFunction)
-        # bins = fft([signal[frameStartIndex+i]*windowFunction[i] for i in range(windowLength)], isCustomFFT, True)
         bins = np.fft.rfft([signal[frameStartIndex+i]*windowFunction[i] for i in range(windowLength)])
 
-        deltaT_in = hopIn/sampleRate
-        deltaT_out= hopOut/sampleRate
-
-        # print(len(bins))
-        # print(numFrame)
         phaseIn = [phase(a) for a in bins]
         phaseOut = []
 
         for i in range(len(bins)):
-            #guitar guy
-            # trueFreq = freq_vector[i] + ((((phaseIn[i] - prevPhaseIn[i]) / deltaT_in) - freq_vector[i] + math.pi) % (2*math.pi)) - math.pi
-            # newPhase = prevPhaseOut[i] + trueFreq*deltaT_out
-
-            
-            # trueFreqPrediction = (phaseIn[i] - prevPhaseIn[i])/(2*math.pi*deltaT_in)
-            # newPrediction = trueFreqPrediction
-            # below = trueFreqPrediction < freq_vector[i]
-            # n=0
-            # while below == True:
-            #     newPrediction = trueFreqPrediction + 1/deltaT_in
-            #     if newPrediction > freq_vector[i]:
-            #         below = False
-            #     else:
-            #         trueFreqPrediction = newPrediction
-            #         n += 1
-            # if freq_vector[i] - trueFreqPrediction < newPrediction - freq_vector[i]:
-            #     trueFreq = trueFreqPrediction
-            # else:
-            #     trueFreq = newPrediction
-            #     n += 1
-            # newPhase = prevPhaseOut[i] + 2*math.pi*trueFreq*deltaT_in + (abs(n-i)%2)*math.pi
-
-
-            ### BEST matlab
-            # trueFreq = (phaseIn[i] - prevPhaseIn[i] + 2*math.pi*i)/(2*math.pi*(hopIn/sampleRate))
-            # newPhase = (prevPhaseOut[i] + 2*math.pi*trueFreq*(hopIn/sampleRate)) + ((i+1)%2)*math.pi
-
-            #matlab guy
-            # extraPhase = phaseIn[i] - prevPhaseIn[i] - 2*math.pi*hopIn*i/windowLength
-            # extraPhase -= round(extraPhase/(2*math.pi))*2*math.pi
-            # extraPhase = (extraPhase+2*math.pi*hopIn*i/windowLength)*scalingFactor
-            # newPhase = prevPhaseOut[i] + extraPhase
-
-            #paper guy (rainbow guy) but interpreted
+            # best explanation of phase issues/solutions seems to be https://sethares.engr.wisc.edu/vocoders/Transforms.pdf Section 5.3.4 'The Phase Vocoder'
             numCyclesToTrueFreq = round(deltaT_in*freq_vector[i] - (phaseIn[i] - prevPhaseIn[i])/(2*math.pi))
             trueFreq = (phaseIn[i] - prevPhaseIn[i] + 2*math.pi*numCyclesToTrueFreq)/(2*math.pi*deltaT_in)
             newPhase = prevPhaseOut[i] + 2*math.pi*trueFreq*deltaT_in
 
-            #2nd best? zynaptiq
-            # trueFreq = (sampleRate/windowLength)*(i + phaseIn[i]*(windowLength/overlapLength)/(2*math.pi))
-            # newPhase = (prevPhaseOut[i] + 2*math.pi*trueFreq*(hopIn/sampleRate)) + (i%2)*math.pi
-            # newPhase = prevPhaseOut[i] + trueFreq*deltaT_in
-
-            #3rd best? bowl guy
-            # newPhase = (prevPhaseOut[i] + phaseIn[i] - prevPhaseIn[i]) % 2*math.pi
-
             phaseOut.append(newPhase)
-            # bins[i] = changePhase(bins[i], newPhase)
             bins[i] = abs(bins[i])*(math.e**(1j*newPhase))
 
         newPartialSignal = np.fft.irfft(bins)
-        # newPartialSignal = [newPartialSignal[i]*windowFunction[i] for i in range(windowLength)]
-        # for i in range(windowLength):
-        #     if windowFunction[i] != 0:
-        #         newPartialSignal[i] /= windowFunction[i]
-        # newPartialSignal = ifft(bins, isCustomFFT, True)
-        # print(len(newPartialSignal), newPartialSignal[0])
-        # print(frameStartIndex)
-        # print(len(newPartialSignal))
-        # print(frameStartIndex,frameStartIndex+windowLength)
-        # print(frameStartIndex+numFrame*(hopOut - hopIn), frameStartIndex+numFrame*(hopOut - hopIn)+windowLength)
-
-        # for i in range(frameStartIndex, frameStartIndex + windowLength):
-        #     newSignal[i+numFrame*(hopOut - hopIn)] += newPartialSignal[i%windowLength]
-            # newSignal[i] += abs(newPartialSignal[i%windowLength])
 
         for i in range(windowLength):
-            # print(i+numFrame*hopOut)
             newSignal[i+numFrame*hopOut] += newPartialSignal[i]
-        # print("frame done")
-        return phaseIn, phaseOut
 
-
-def RECURSIVEphaseVocoderStretch(signal, sampleRate, scalingFactor, windowLength, overlapLength, isCustomFFT=False, windowFunction=None):
-    hopIn = windowLength - overlapLength
-    hopOut = round(hopIn * scalingFactor)
-
-    numFrames = ((len(signal)-windowLength)//(hopIn)) +1
-    print("numframes", numFrames)
-    print(math.ceil(len(signal)*scalingFactor), (numFrames-1)*hopOut+windowLength)
-    finalFrameStartIndex = hopIn * (numFrames-1)
-    # newSignal = [0 for i in range(math.ceil(len(signal)*scalingFactor))]
-    newSignal = [0 for i in range((numFrames)*hopOut+windowLength)]
-
-    # print(len(newSignal))
-    freq_vector = np.fft.fftfreq(windowLength, d=1/sampleRate)
-    # freq_vector = [i/sampleRate for i in range(windowLength)]
-
-    addPartialNewSignal(newSignal, finalFrameStartIndex, freq_vector, hopIn, hopOut, numFrames-1, signal, sampleRate, scalingFactor, windowLength, overlapLength, isCustomFFT, windowFunction)
-
-    # return multiplyGainUntilClipping([abs(x)*phase(x) for x in newSignal])
-    print(proportionClipping(newSignal))
-    print(min(newSignal), max(newSignal))
     if proportionClipping(newSignal) > 0:
         newSignal = multiplyGainUntilClipping(newSignal)
-    print(min(newSignal), max(newSignal))
+
     return newSignal
 
-def stretch(sound_array, f, window_size, h):
-    """ Stretches the sound by a factor `f` """
-
-    phase  = np.zeros(window_size)
-    hanning_window = np.hanning(window_size)
-    result = [0+0j for i in range(len(sound_array) *f + window_size)] #np.zeros( len(sound_array) //f + window_size)
-
-    for i in np.arange(0, len(sound_array)-(window_size+h), h*f):
-
-        # two potentially overlapping subarrays
-        a1 = sound_array[i: i + window_size]
-        a2 = sound_array[i + h: i + window_size + h]
-
-        # resynchronize the second array on the first
-        s1 =  np.fft.fft(hanning_window * a1)
-        s2 =  np.fft.fft(hanning_window * a2)
-        phase = (phase + np.angle(s2/s1)) % 2*np.pi
-        a2_rephased = np.fft.ifft(np.abs(s2)*np.exp(1j*phase))
-
-        # add to result
-        i2 = int(i/f)
-        result[i2 : i2 + window_size] += hanning_window*a2_rephased
-
-    result = ((2**(16-4)) * result/max(result)) # normalize (16bit)
-
-    return result.astype('int16')
-
-def phaseVocoderPitchShift(signal, sampleRate, scalingFactor, windowLength, overlapLength, isCustomFFT = False, windowFunction=None):
-    newSignal = RECURSIVEphaseVocoderStretch(signal, sampleRate, scalingFactor, windowLength, overlapLength, isCustomFFT, windowFunction)
-    # newSignal = stretch(signal, scalingFactor, windowLength, windowLength-overlapLength)
-    print("signalmade")
+def phaseVocoderPitchShift(signal, sampleRate, scalingFactor, windowLength, overlapLength, windowFunction=None):
+    newSignal = phaseVocoderStretch(signal, sampleRate, scalingFactor, windowLength, overlapLength, windowFunction)
     return resample(newSignal, sampleRate, sampleRate/scalingFactor)
-    # return newSignal[::2]
+
+def matchPitch(originalPitchProfile, matchingPitchProfile):
+    '''Takes the signal from *originalPitchProfile* and shifts it in various ways so that the returned signal has a pitch profile that 
+    matches that of *matchingPitchProfile
+    NOTE: Requires both pitch profiles to use the same sampleRate'''
+    #get list of major sections where pitch stays stable in each pitchProfile
+    #iterate through the profiles and for each new intersection of the above sections calculate the corresponding pitch ratio
+    #   -> then use phase vocoder pitch shift on each of these intersections so that the new pitch profile matches the desired profile
+    originalIndexedPitchData = originalPitchProfile.getIndexedPitchData()
+    matchingIndexedPitchData = matchingPitchProfile.getIndexedPitchData()
+
+    original sections
+
+    #compress both indexedPitchData lists into 'sections' where the pitch stays 'stable' i.e. stays within +/-10 cents of the section's starting pitch
+    originalSectionStartPitch = originalPitchProfile[0][2]
+    originalSectionStartIndex = 0
+    matchingSectionStartPitch = matchingPitchProfile[0][2]
+    originalSectionStartIndex = 0
+    i = 1
+    while i < min(len(originalIndexedPitchData), len(matchingIndexedPitchData)):
+        if abs(getMidiNoteWithCents(originalIndexedPitchData[i][2]) - getMidiNoteWithCents(originalSectionStartPitch)) <= 0.1:
+            del originalIndexedPitchData[i]
+            originalIndexedPitchData[originalSectionStartIndex][1] += originalPitchProfile.blockSize - originalPitchProfile.overlap
+            i -= 1
+        else:
+            originalSectionStartPitch = originalIndexedPitchData[i][2]
+            originalSectionStartIndex += 1
+
+        if abs(getMidiNoteWithCents(matchingIndexedPitchData[i][2]) - getMidiNoteWithCents(matchingSectionStartPitch)) <= 0.1:
+            del matchingIndexedPitchData[i]
+            matchingIndexedPitchData[matchingSectionStartIndex][1] += matchingPitchProfile.blockSize - matchingPitchProfile.overlap
+            i -= 1
+        else:
+            matchingSectionStartPitch = matchingIndexedPitchData[i][2]
+            matchingSectionStartIndex += 1
+
+        i += 1
+
+    #for each intersection of the newly found 'stable sections' we must now shift the frequency of the original signal to match the matching signal's frequency
