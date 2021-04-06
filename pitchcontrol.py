@@ -4,17 +4,18 @@ from predict import zerocross, autocorrelation, AMDF, naiveFT, cepstrum, HPS
 from helpers import *
 import signalGenerator
 import math
-import circularBuffer
 import numpy as np
 from timeit import default_timer as timer
 import soundfile as sf
+import logging
+import sys
 
-#lowest possible frequency detection (realistically) is around sampleRate/CHUNK_SIZE
-#so if CHUNK_SIZE=1024 and sampleRate=44.1kHz, we can detect (hopefully) from about 43Hz upwards
-#We want CHUNK_SIZE to be a power of 2 to maximise the efficiency of the FFT
-CHUNK_SIZE = 1024
+verbose = False
 
 def analysePitch(file):
+    if(verbose):
+        logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+
     buffer = circularBuffer(CHUNK_SIZE)
     data, samplerate = sf.read(file)
 

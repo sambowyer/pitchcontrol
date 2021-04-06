@@ -72,7 +72,7 @@ class PitchProfile:
     def printLog(self):
         print(self.getLog())
 
-    def writeLog(self,writeLocation):
+    def writeLog(self, writeLocation):
         with open(writeLocation, "w") as f:
             f.write(self.getLog())
 
@@ -84,6 +84,10 @@ class PitchProfile:
                 blockEndIndex   = index within the whole signal that the block ends at
                 pitchPrediction = pitch prediction (in Hz) for this block'''
         return [[i*(self.blockSize-self.overlap), i*(self.blockSize-self.overlap)+self.blockSize, self.pitchData[i]] for i in range(len(self.pitchData))]
+
+    def autoCorrectPitchData(self):
+        for i in range(len(self.pitchData)):
+            self.pitchData[i] = midiToFreq(round(getMidiNoteWithCents(self.pitchData[i])))
 
     def predictPitch(self, partialSignal):
         if self.detectionMode == "zerocross":
@@ -112,7 +116,8 @@ class PitchProfile:
 
         pitchData = []
         for sig in partialSignals:
-            pitchData.append(self.predictPitch([sig[i]*self.windowFunction[i] for i in range(self.blockSize)]))
+            # print(len(sig))
+            pitchData.append(self.predictPitch([sig[i]*self.windowFunction[i] for i in range(len(sig))]))
 
         end = timer()
 

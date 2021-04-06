@@ -1,7 +1,7 @@
 from predict import zerocross, autocorrelation, AMDF, naiveFT, cepstrum, HPS, fft
 import signalGenerator
 from PitchProfile import PitchProfile
-from pitchShift import phaseVocoderPitchShift, phaseVocoderStretch
+from pitchShift import phaseVocoderPitchShift, phaseVocoderStretch, matchPitch
 from helpers import *
 import soundfile as sf
 from timeit import default_timer as timer
@@ -620,7 +620,64 @@ def phaseVocoderTest3():
         generalPhaseVocoderTest(inFolderPath, f, outFolderPath, 2**(4/12))
         print(f + " done.")
 
-phaseVocoderTest3()
+def pitchMatchingTest1():
+    hanningWindow = getHanningWindow(2048)
+
+    filename = "uhhh-gentle-female-singing_B_major.wav"
+    # filename = "clar_stretched.wav"
+    # filename = "choir-boy-solo-singing_150bpm_D_minor.wav"
+    sampleRate = sf.info("wavs/" + filename).samplerate
+    pp1 = PitchProfile("wavs/" + filename, sampleRate, "HPS", {"isCustomFFT" : False, "numDownsamples":4}, "voice", 2048, 1024, hanningWindow, "female-ooh")
+    pp1.analysePitch()
+
+    pp1.writeLog("wavs/pitchMatchTest/original.log")
+
+    pp1.autoCorrectPitchData()
+    pp1.writeLog("wavs/pitchMatchTest/correctedData.log")
+
+    # signal, sampleRate = sf.read("wavs/" + filename)
+    # shifted = phaseVocoderPitchShift(toMono(signal), sampleRate, 2**(7.5/12), 2048, 1536, windowFunction=getHanningWindow(2048))
+    # filename = "choir-boy-solo-singing_150bpm_D_minor_detuned.wav"
+    # sf.write("wavs/" + filename, shifted, sampleRate)
+
+    sampleRate = sf.info("wavs/" + filename).samplerate
+    pp2 = PitchProfile("wavs/" + filename, sampleRate, "HPS", {"isCustomFFT" : False, "numDownsamples":4}, "voice", 2048, 1024, hanningWindow, "choirboy")
+    pp2.analysePitch()
+
+    # signal = matchPitch(pp2, pp1)
+    # sf.write("wavs/pitchMatchTest/matched.wav", signal, sampleRate)
+    
+    signal = matchPitch(pp2, pp1)
+    sf.write("wavs/pitchMatchTest/corrected.wav", signal, sampleRate)
+
+    filename = "pitchMatchTest/corrected.wav"
+    sampleRate = sf.info("wavs/" + filename).samplerate
+    pp3 = PitchProfile("wavs/" + filename, sampleRate, "HPS", {"isCustomFFT" : False, "numDownsamples":4}, "voice", 2048, 1024, hanningWindow, "choirboy")
+    pp3.analysePitch()
+    pp3.writeLog("wavs/pitchMatchTest/correctedAudio.log")
+
+
+    ### now to make the choir boy sound like the female singer (insofar as melody is concerned)
+
+    filename = "choir-boy-solo-singing_150bpm_D_minor.wav"
+    sampleRate = sf.info("wavs/" + filename).samplerate
+    pp4 = PitchProfile("wavs/" + filename, sampleRate, "HPS", {"isCustomFFT" : False, "numDownsamples":4}, "voice", 2048, 1024, hanningWindow, "choirboy")
+    pp4.analysePitch()
+    pp4.writeLog("wavs/pitchMatchTest/toMatch_Audio.log")
+
+    signal = matchPitch(pp4, pp1)
+    sf.write("wavs/pitchMatchTest/matched.wav", signal, sampleRate)
+
+    filename = "pitchMatchTest/matched.wav"
+    sampleRate = sf.info("wavs/" + filename).samplerate
+    pp5 = PitchProfile("wavs/" + filename, sampleRate, "HPS", {"isCustomFFT" : False, "numDownsamples":4}, "voice", 2048, 1024, hanningWindow, "choirboy")
+    pp5.analysePitch()
+    pp5.writeLog("wavs/pitchMatchTest/matchedAudio.log")
+
+
+
+pitchMatchingTest1()
+
 
 # printPitchInfo(440)
 
@@ -648,3 +705,8 @@ phaseVocoderTest3()
 # printPitchInfo(cepstrum(signalGenerator.getSaw(100,2048,44100), 44100, False))
 # printPitchInfo(HPS(signalGenerator.getSaw(100,2048,44100), 44100, False, 4))
 
+
+# signal, sampleRate = sf.read("wavs/clar.wav")
+# stretched = phaseVocoderStretch(signal, sampleRate, 2, 2048, 1536, windowFunction=getHanningWindow(2048))
+# sf.write("wavs/clar_stretched.wav", stretched, sampleRate)
+    
