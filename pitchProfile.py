@@ -98,6 +98,8 @@ class PitchProfile:
             return AMDF(partialSignal, self.sampleRate, self.detectionParams["b"], self.detectionParams["expectedMin"], self.detectionParams["expectedMax"])
         elif self.detectionMode == "naiveFT":
             return naiveFT(partialSignal, self.sampleRate, self.detectionParams["isCustomFFT"], self.detectionParams["expectedMin"], self.detectionParams["expectedMax"])
+        elif self.detectionMode == "naiveFTWithPhase":
+            return naiveFTWithPhase(partialSignal, self.sampleRate, self.detectionParams["isCustomFFT"], self.detectionParams["expectedMin"], self.detectionParams["expectedMax"])
         elif self.detectionMode == "cepstrum":
             return cepstrum(partialSignal, self.sampleRate, self.detectionParams["isCustomFFT"], self.detectionParams["expectedMin"], self.detectionParams["expectedMax"])
         elif self.detectionMode == "HPS":

@@ -1,4 +1,4 @@
-from predict import zerocross, autocorrelation, AMDF, naiveFT, cepstrum, HPS, fft
+from predict import zerocross, autocorrelation, AMDF, naiveFT, cepstrum, HPS, naiveFTWithPhase
 import signalGenerator
 from PitchProfile import PitchProfile
 from pitchShift import phaseVocoderPitchShift, phaseVocoderStretch, matchPitch
@@ -674,9 +674,37 @@ def pitchMatchingTest1():
     pp5.analysePitch()
     pp5.writeLog("wavs/pitchMatchTest/matchedAudio.log")
 
+def cepstrumTweakingTest():
+    signal = signalGenerator.getSquare(900,2048,44100)
+    print(cepstrum(signal, 44100, False, expectedMin=300, expectedMax=1500))
+    print(cepstrum(signal, 44100, True, expectedMin=300, expectedMax=1500))
 
+    signal = signalGenerator.getSquare(1500,2048,44100)
+    print(cepstrum(signal, 44100, False, expectedMin=500, expectedMax=3000))
+    print(cepstrum(signal, 44100, True, expectedMin=500, expectedMax=3000))
 
-pitchMatchingTest1()
+def naiveFTWithPhaseTest(freqs = [50,100,200,300,400,440,500,800,1000,2000,4000,8000,10000,15000]):
+    for freq in freqs:
+        sine = signalGenerator.getSine(freq, 1280, 44100)
+        square = signalGenerator.getSquare(freq, 1280, 44100)
+        saw = signalGenerator.getSaw(freq, 1280, 44100)
+        triangle = signalGenerator.getTriangle(freq, 1280, 44100)
+        sineHarmonics = signalGenerator.getSineWithHarmonics(freq, 1280, 44100, 15)
+
+        signals = {"sine":sine, "square":square, "saw":saw, "triangle":triangle, "sineHarmonics":sineHarmonics}
+
+        for signal in signals:
+            start = timer()
+            pred = naiveFTWithPhase(signals[signal], 44100, False)
+            end = timer()
+            print("%s   %sHz: %sHz (zerocross)       - took %ss" % (signal, freq, pred, end-start))
+
+            start = timer()
+            pred = naiveFT(signals[signal[:1024]], 44100, False)
+            end = timer()
+            print("%s   %sHz: %sHz (zerocross)       - took %ss\n " % (signal, freq, pred, end-start))
+
+# naiveFTWithPhaseTest()
 
 
 # printPitchInfo(440)

@@ -1,5 +1,5 @@
 import customFFT
-import math
+import math, cmath
 from helpers import resample, getTrimmedMean, getMidiNoteWithCents, fft
 import numpy as np 
 import matplotlib.pyplot as plt #for bug fixing and testing
@@ -102,13 +102,6 @@ def AMDF(signal, sampleRate, b=1, expectedMin=20, expectedMax=20000):
 
 #### FREQUENCY-DOMAIN ALGORITHMS
 
-## Preliminary sunctions for frequency-domain algorithms
-
-def magnitudeSquaredBins(bins):
-    return [abs(i)*abs(i) for i in bins]
-
-## Prediction Functions
-
 def naiveFT(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000):
     '''A Naive Fourier-Transform Pitch Detection Method
     Predicts the frequency of a mono signal simply by picking the largest peak in the  Fourier-transform of the signal.'''
@@ -134,6 +127,40 @@ def naiveFT(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000):
     # print(np.where(mags == maxLog)[0])
     # return freq_vector[np.where(mags == maxLog)][0]
 
+def naiveFTWithPhase(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000):
+    '''Another Naive Fourier Transform approach where phase information is used to tweak the predition.
+    Compute two overlapping fourier transforms and initially just choose the bin with the largest magnitude (in the second FT frame) - exactly the same as naiveFT.
+    Then, use the phase information to tweak the prediction with an improved resolution. 
+    This is the same method by which true-bin-frequenies are calculated in the phase vocoder implementation.'''
+    #First find the ideal FT window size (should be a power of 2), assuming a 75% overlap in the two windows.
+    windowLength = 2**(math.floor(math.log2(len(signal)*0.8)))
+    print(windowLength)
+    freq_vector = np.fft.rfftfreq(windowLength, d=1/sampleRate)
+    minExpectedBin = min(np.where(freq_vector >= expectedMin)[0])
+    maxExpectedBin = max(np.where(freq_vector <= expectedMax)[0])
+
+    #Then get our two FT frames
+    bins1 = fft(signal[:windowLength], isCustomFFT)
+    bins2 = fft(signal[windowLength//4:windowLength+windowLength//4], isCustomFFT)
+
+    mags = np.abs(bins2)
+
+    maxMag = 0
+    maxMagBin = 1
+    for i in range(max(1, minExpectedBin), min(len(mags), maxExpectedBin+1)):
+        if mags[i] > maxMag:
+            maxMag = mags[i]
+            maxMagBin = i
+
+    #Now to utilise the phase information
+    deltaT_in = (windowLength//4)/sampleRate
+    phaseDiff = cmath.phase(bins2[maxMagBin]) - cmath.phase(bins1[maxMagBin])
+
+    numCyclesToTrueFreq = round(deltaT_in*freq_vector[maxMagBin] - phaseDiff/(2*math.pi))
+    trueFreq = (phaseDiff + 2*math.pi*numCyclesToTrueFreq)/(2*math.pi*deltaT_in)
+
+    return trueFreq
+
 def cepstrum(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000):
     '''Cepstrum Pitch Detection
     Predicts the frequency of a mono signal by finding the period which most strongly correlates to the distance between peaks in the Fourier-transform of the signal.
@@ -143,13 +170,26 @@ def cepstrum(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000)
     # plt.plot(range(len(signal)), signal)
 
     freq_vector = np.fft.rfftfreq(len(signal), d=1/sampleRate)
-    log_X = np.log(np.abs(fft(signal, isCustomFFT)))
+    mags = np.abs(fft(signal, isCustomFFT))
+    log_X = []
+
+    #to supress potential (very rare) numpy warnings that come with some particular signals (e.g. a 900Hz square wave w/ length 2048 and sample rate 44100Hz) -
+    #   not strictly necessary but leads to a better UX
+    if 0 in mags: 
+        for i in range(len(mags)):
+            if mags[i] == 0:
+                log_X.append(-float("inf"))
+            else:
+                log_X.append(np.log(mags[i]))
+    else:
+        #faster processing possible in this case and no need to worry about warnings
+        log_X = np.log(mags)
 
     # maxLog = max(log_X)
     # print(freq_vector[np.where(log_X == maxLog)])
 
     cepstrumBins = np.abs(fft(log_X, isCustomFFT))
-    quefrencies = np.fft.rfftfreq(log_X.size, d=freq_vector[1]-freq_vector[0])
+    quefrencies = np.fft.rfftfreq(len(log_X), d=freq_vector[1]-freq_vector[0])
 
     # print(cepstrumBins)
     # print(quefrencies)
@@ -225,7 +265,8 @@ def getAllPredictions(signal, sampleRate, b, isCustomFFT, numDownsamples):
     predictions = {"zerocross" : zerocross(signal, sampleRate), 
                    "autocorrelation" : autocorrelation(signal, sampleRate), 
                    "AMDF" : AMDF(signal, sampleRate, b), 
-                   "naiveFFT" : naiveFFT(signal, sampleRate, isCustomFFT), 
+                   "naiveFT" : naiveFT(signal, sampleRate, isCustomFFT),
+                   "naiveFTWithPhase" : naiveFTWithPhase(signal, sampleRate, isCustomFFT),
                    "cepstrum" : cepstrum(signal, sampleRate, isCustomFFT), 
                    "HPS" : HPS(signal, sampleRate, isCustomFFT, numDownsamples)}
     
@@ -233,5 +274,6 @@ def getAllPredictions(signal, sampleRate, b, isCustomFFT, numDownsamples):
 
 def getTrimmedMeanPrediction(signal, sampleRate, b, isCustomFFT, numDownsamples, trimSize):
     predictions = [zerocross(signal, sampleRate), autocorrelation(signal, sampleRate), AMDF(signal, sampleRate, b),
-        naiveFFT(signal, sampleRate, isCustomFFT), cepstrum(signal, sampleRate, isCustomFFT), HPS(signal, sampleRate, isCustomFFT, numDownsamples)]
+        naiveFT(signal, sampleRate, isCustomFFT), naiveFTWithPhase(signal, sampleRate, isCustomFFT), 
+        cepstrum(signal, sampleRate, isCustomFFT), HPS(signal, sampleRate, isCustomFFT, numDownsamples)]
     return getTrimmedMean(predictions, trimSize)

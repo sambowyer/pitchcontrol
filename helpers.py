@@ -46,6 +46,14 @@ def toMono(signal):
     '''requires the signal to not already be in mono'''
     return [sum(channels) for channels in signal]
 
+def trimForFFT(signal, twoFrameOverlap=False):
+    if twoFrameOverlap == False:
+        return signal[:2**(math.floor(math.log2(len(signal))))]
+    else:
+        #naiveFTWithPhase requires an overlap of 75% so we need to extend the window by a quarter
+        windowLength = 2**(math.floor(math.log2(len(signal)*0.8)))
+        return signal[:windowLength + windowLength//4]
+
 def linearInterpolate(x1, x2, gamma):
     return (x1 + (x2-x1)*gamma)
 
@@ -109,12 +117,6 @@ def addGaussianWhiteNoise(signal, std=0.05, clip=True, clipMin=-1, clipMax=1):
 
     return signal
 
-# CONSIDER WHETHER TO KEEP THIS IN - window functions seem very interesting but it is a very big subject.
-#   To include JUST a hanning window and no other types of window functions may seem pointless/rather arbitrary.
-#   Plus it would likely require discussion in my report and I don't know whether I would be able to do it justice 
-#   especially since it is just 'an aside' and not really one of the main parts of this project.
-#   Though, perhaps it may be interesting to see if it does help with pitch detection - If it does (significantly) then 
-#   it may be worth keeping it in and trying my best to justify just using Hanning windows and no other window functions
 def getHanningWindow(length):
     return [(math.sin(math.pi*i/(length-1)))**2 for i in range(length)]
 
@@ -160,3 +162,14 @@ def getTrimmedMean(data, trimSize):
     trimIndices = [math.floor((len(data)-1)*trimSize), math.ceil((len(data)-1)*(1-trimSize))]
     trimIndices.sort()
     return sum(sortedData[trimIndices[0]:trimIndices[1]])/(trimIndices[1]-trimIndices[0])
+
+def getMedian(data):
+    '''returns the median of the data. 
+    Note that this result can be equivalently aquired with getTrimmedMean with the correct trimSize, however, this implementation will be faster.'''
+    sortedData = data.copy()
+    sortedData.sort()
+    size = len(data)
+    if size % 2 == 0:
+        return 0.5 * (sortedData[size//2-1]+sortedData[size//2])
+    else:
+        return sortedData[size//2]

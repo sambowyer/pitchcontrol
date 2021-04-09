@@ -2,7 +2,7 @@
 ## CS Project 2020-21 (3rd Year 40-credit module)
 ### (A pitch detection and shifting program/library)
 
-A command-line program providing a range of pitch detection algorithms with pitch shifting capability. Although the project can be thought of as a library, a command -ine interface is available (using [pitchControl.py](pitchControl.py)) for some of the more important use cases.
+A command-line program providing a range of pitch detection algorithms with pitch shifting capability. Although the project can be thought of as a library, a command-line interface is available (using [pitchControl.py](pitchControl.py)) for some of the more important use cases.
 
 ### Requirements (all available with pip)
 - numpy
@@ -24,7 +24,7 @@ There are six different pitch detection algorithms avaiable to use (all located 
 - **naiveFT**
   - Predicts the frequency of a mono signal simply by picking the largest peak in the  Fourier-transform of the signal.
   - [ADD CODE/CMD]
-- **Cepstrum**
+- **cepstrum**
   - Predicts the frequency of a mono signal by finding the period which most strongly correlates to the distance between peaks in the Fourier-transform of the signal.
     Assuming the peaks in the Fourier transform are located at harmonics of the signal, this period should represent the distance between the harmonics, i.e. the fundamental period.
     [ADD CODE/CMD]
