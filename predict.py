@@ -134,7 +134,7 @@ def naiveFTWithPhase(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMa
     This is the same method by which true-bin-frequenies are calculated in the phase vocoder implementation.'''
     #First find the ideal FT window size (should be a power of 2), assuming a 75% overlap in the two windows.
     windowLength = 2**(math.floor(math.log2(len(signal)*0.8)))
-    print(windowLength)
+    # print(windowLength)
     freq_vector = np.fft.rfftfreq(windowLength, d=1/sampleRate)
     minExpectedBin = min(np.where(freq_vector >= expectedMin)[0])
     maxExpectedBin = max(np.where(freq_vector <= expectedMax)[0])

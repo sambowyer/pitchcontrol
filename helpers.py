@@ -151,7 +151,7 @@ def STFT(signal, windowSize, overlap, isCustomFFT = False, windowFunction=None):
 ## stats helpers
 def getTrimmedMean(data, trimSize):
     '''returns the mean of the list 'data' excluding its smallest and largest elements.
-    The total proportion of the list to be excluded from the mean calculation is given by 'trimSize' - between 0 and 1.'''
+    The total proportion of the list to be excluded from the mean calculation is given by 2*'trimSize' - between 0 and 1.'''
     
     if trimSize > 1 or len(data) == 0:
         return None
@@ -159,7 +159,7 @@ def getTrimmedMean(data, trimSize):
         return sum(data)/len(data)
     sortedData = data.copy()
     sortedData.sort()
-    trimIndices = [math.floor((len(data)-1)*trimSize), math.ceil((len(data)-1)*(1-trimSize))]
+    trimIndices = [math.floor(len(data)*trimSize), math.ceil(len(data)*(1-trimSize))]
     trimIndices.sort()
     return sum(sortedData[trimIndices[0]:trimIndices[1]])/(trimIndices[1]-trimIndices[0])
 
@@ -173,3 +173,27 @@ def getMedian(data):
         return 0.5 * (sortedData[size//2-1]+sortedData[size//2])
     else:
         return sortedData[size//2]
+
+## pitch detection measures of success
+#  metrics to check:
+#   (0) % error (based on Hz values)
+#   (1) absolute error in midiValue - since musical notes are distributed on Hz logarithmically this may make more sense than (1)
+#   (2) % of predictions within 100 cents of true frequency
+#   (3) % of predictions within 100 cents of true frequency +\- 1 octave
+
+# (0)
+def getPercentageError(expectedFreq, actualFreq):
+    return (abs(expectedFreq-actualFreq))/expectedFreq
+
+#(1)
+def getPercentageMIDIError(expectedFreq, actualFreq):
+    return abs(getMidiNoteWithCents(expectedFreq) - getMidiNoteWithCents(actualFreq))
+
+#(2)
+def isWithin100Cents(expectedFreq, actualFreq):
+    return int(abs(getMidiNoteWithCents(expectedFreq) - getMidiNoteWithCents(actualFreq)) <= 0.5)
+
+#(3)
+def isWithin100CentsWithOctaveError(expectedFreq, actualFreq):
+    diff = abs(getMidiNoteWithCents(expectedFreq) - getMidiNoteWithCents(actualFreq))
+    return int(diff <= 0.5 or (diff <= 12.5 and diff >= 11.5))
