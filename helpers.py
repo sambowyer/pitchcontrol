@@ -108,9 +108,9 @@ def proportionClipping(signal, clipMin=-1, clipMax=1):
             clipCount += 1
     return clipCount / len(signal)
 
-def addGaussianWhiteNoise(signal, std=0.05, clip=True, clipMin=-1, clipMax=1):
+def addGaussianWhiteNoise(signal, sd=0.05, clip=True, clipMin=-1, clipMax=1):
     for i in range(len(signal)):
-        signal[i] += np.random.normal(0, std)
+        signal[i] += np.random.normal(0, sd)
 
     if clip:
         return clipSignal(signal,clipMin, clipMax)

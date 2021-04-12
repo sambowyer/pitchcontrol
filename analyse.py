@@ -26,8 +26,104 @@ def isWithin100CentsWithOctaveError(expectedFreq, actualFreq):
     diff = abs(getMidiNoteWithCents(expectedFreq) - getMidiNoteWithCents(actualFreq))
     return int(diff <= 0.5 or (diff <= 12.5 and diff >= 11.5))
 
+
+def getMeanTimeAndErrors(conditions, csvFilePath, verbose=False):
+    '''Returns a list of the form [mean time, mean percentErr, mean absMidiErr, mean correctNote, mean correctNoteWithOctaveErr] 
+    where the mean values are taken across csv lines in *csvFilePath* that meet the conditions given in the dictionary *conditions*
+        e.g. the conditions dictionary {isCustomFFT : [True]} will average out results of all test cases where isCustomFFT=True
+        whereas the dictionary {isCustomFFT : [True, False]} will average out results of all test cases where isCustomFFT=True OR isCustomFFT=False'''
+    meanTimeAndErrors = [0,0,0,0,0]
+    count = 0
+
+    with open(csvFilePath,"r") as f:
+        headers = f.readline().strip().replace(" ","").split(",")
+        
+        conditionIndices = []
+        for condtionVar in conditions:
+            headerIndex = 0
+            for header in headers:
+                if condtionVar == header:
+                    conditionIndices.append(headerIndex)
+                    break
+                headerIndex += 1
+
+        line = f.readline()
+        while line:
+            line = line.strip().replace(" ","").split(",")
+
+            meetsConditions = True
+            conditionIndex = 0
+            for condition in conditions:
+                if line[conditionIndices[conditionIndex]] not in conditions[condition]:
+                    meetsConditions = False
+                    break
+                conditionIndex += 1
+
+            if meetsConditions:
+                count += 1
+                for i in range(5):
+                    meanTimeAndErrors[i] += float(line[-(5-i)])
+
+            line = f.readline()
+            line1 = False
+        
+    if count == 0:
+        if verbose:
+            print("No lines found to match condition %s" % (conditions))
+        return [-1,-1,-1,-1,-1]
+    
+    meanTimeAndErrors = [x/count for x in meanTimeAndErrors]
+
+    if verbose:
+        print("Mean Time: %ss\nMean Percent Error (Hz): %s\nMean Absolute MIDI Error: %s\nProportion correct (+/- 50 cents): %s\nProportion correct (+/- 50 cents) w/ octave error: %s" % (meanTimeAndErrors[0],meanTimeAndErrors[1],meanTimeAndErrors[2],meanTimeAndErrors[3],meanTimeAndErrors[4]))
+
+    return meanTimeAndErrors
+
+def printOptimisationTestAnalysis():
+    print("Optimising 'b' (in AMDF)")
+    print("b=0.5")
+    getMeanTimeAndErrors({"b" : ["0.5"], "algorithm" : ["AMDF"]}, "csvs/optimisationTest.csv", True)
+    print("b=1")
+    getMeanTimeAndErrors({"b" : ["1"], "algorithm" : ["AMDF"]}, "csvs/optimisationTest.csv", True)
+    print("b=2")
+    getMeanTimeAndErrors({"b" : ["2"], "algorithm" : ["AMDF"]}, "csvs/optimisationTest.csv", True)
+    print()
+
+    print("Optimising 'isCustomFFT'")
+    print("isCustomFFT=False")
+    getMeanTimeAndErrors({"isCustomFFT" : ["False"], "algorithm" : ["naiveFT", "naiveFTWithPhase", "cepstrum", "HPS"]}, "csvs/optimisationTest.csv", True)
+    print("isCustomFFT=True")
+    getMeanTimeAndErrors({"isCustomFFT" : ["True"], "algorithm" : ["naiveFT", "naiveFTWithPhase", "cepstrum", "HPS"]}, "csvs/optimisationTest.csv", True)
+    print()
+
+    print("Optimising 'numDownsamples' (in HPS)")
+    print("numDownsamples=2")
+    getMeanTimeAndErrors({"numDownsamples" : ["2"], "algorithm" : ["HPS"]}, "csvs/optimisationTest.csv", True)
+    print("numDownsamples=4")
+    getMeanTimeAndErrors({"numDownsamples" : ["4"], "algorithm" : ["HPS"]}, "csvs/optimisationTest.csv", True)
+    print("numDownsamples=6")
+    getMeanTimeAndErrors({"numDownsamples" : ["6"], "algorithm" : ["HPS"]}, "csvs/optimisationTest.csv", True)
+    print()
+
+    print("Optimising 'octaveTrick'")
+    print("octaveTrick=False")
+    getMeanTimeAndErrors({"octaveTrick" : ["False"], "algorithm" : ["HPS"]}, "csvs/optimisationTest.csv", True)
+    print("octaveTrick=True")
+    getMeanTimeAndErrors({"octaveTrick" : ["True"], "algorithm" : ["HPS"]}, "csvs/optimisationTest.csv", True)
+    print()
+
+    print("Optimising sampleRate (for generated signals)")
+    print("sampleRate=22050")
+    getMeanTimeAndErrors({"sampleRate" : ["22050"], "instrument" : ["n/a"]}, "csvs/optimisationTest.csv", True)
+    print("sampleRate=441000")
+    getMeanTimeAndErrors({"sampleRate" : ["44100"], "instrument" : ["n/a"]}, "csvs/optimisationTest.csv", True)
+    print()
+
+
+printOptimisationTestAnalysis()
+
+## For use with old csv format (i.e. generatedSignalsTest.csv and wavTests.csv)
 # separate results based firstly by algorithm and secondly by type of wave
- 
 def getDictionaryOfErrors(csvFilePath):
     '''returns a dictionary of the form:
             keys   - algorithm name ('zerocross', 'autocorrelation', etc.)
@@ -97,7 +193,6 @@ def printDictionaryOfAverageErrors(avgErrDict):
             print(signal, end=": ")
             print(avgErrDict[algorithm][signal])
         print()
-
 
 ###### REDO OR DISCOUNT THIS FUNCTION FROM FINAL GIT COMMIT B/C HEAVILY RELIES ON TUTORIAL @ 
 ###### https://matplotlib.org/stable/gallery/lines_bars_and_markers/barchart.html#sphx-glr-gallery-lines-bars-and-markers-barchart-py
@@ -169,11 +264,13 @@ def showErrorGraphs(avgErrDict, errorType, signalTypes):
 
     plt.show()
 
-avgErrDict = getDictionaryOfAverageErrors(getDictionaryOfErrors("csvs/generatedSignalsTest.csv"))
-printDictionaryOfAverageErrors(avgErrDict)
-for i in range(4):
-    showErrorGraphs(avgErrDict, i, ["sine", "saw", "square", "triangle", "sineWith10Harmonics", "sineWith20Harmonics"])
+def analyseGeneratedSignalsTest():
+    avgErrDict = getDictionaryOfAverageErrors(getDictionaryOfErrors("csvs/generatedSignalsTest.csv"))
+    printDictionaryOfAverageErrors(avgErrDict)
+    for i in range(4):
+        showErrorGraphs(avgErrDict, i, ["sine", "saw", "square", "triangle", "sineWith10Harmonics", "sineWith20Harmonics"])
 
-avgErrDict = getDictionaryOfAverageErrors(getDictionaryOfErrors("csvs/wavTests.csv"))
-for i in range(4):
-    showErrorGraphs(avgErrDict, i, ["guitarC3", "trebleVoiceA4"])
+def analyseWavTests():
+    avgErrDict = getDictionaryOfAverageErrors(getDictionaryOfErrors("csvs/wavTests.csv"))
+    for i in range(4):
+        showErrorGraphs(avgErrDict, i, ["guitarC3", "trebleVoiceA4"])

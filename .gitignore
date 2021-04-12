@@ -1,10 +1,13 @@
 __pychache__/
 wavs/
 *.wav
+csvs/
+*.csv
 MIDI/
 *.mid
 logs/
 *.log
+testRecords/
 *.pyc
 *.RPP
 *.RPP-bak

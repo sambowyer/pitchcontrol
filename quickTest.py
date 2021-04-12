@@ -707,7 +707,38 @@ def naiveFTWithPhaseTest(freqs = [50,100,200,300,400,440,500,800,1000,2000,4000,
             end = timer()
             print("%s   %sHz: %sHz (zerocross)       - took %ss\n " % (signal, freq, pred, end-start))
 
-# naiveFTWithPhaseTest()
+def signalGainTest2():
+    print("SINE 440Hz")
+    startSignal = signalGenerator.getSine(440, 22050, 44100)
+    print("min: %s   max: %s   %s percent clipped" % (min(startSignal), max(startSignal), proportionClipping(startSignal)*100))
+    sf.write("wavs/gainTests/440sine.wav", startSignal, 44100)
+
+    print("\nADD WHITE NOISE w/ SD=0.001")
+    signal = addGaussianWhiteNoise(startSignal, 0.001)
+    print("min: %s   max: %s   %s percent clipped" % (min(signal), max(signal), proportionClipping(signal)*100))
+    sf.write("wavs/gainTests/440sineNoise0-001.wav", signal, 44100)
+
+    print("\nADD WHITE NOISE w/ SD=0.005")
+    signal = addGaussianWhiteNoise(startSignal, 0.005)
+    print("min: %s   max: %s   %s percent clipped" % (min(signal), max(signal), proportionClipping(signal)*100))
+    sf.write("wavs/gainTests/440sineNoise0-005.wav", signal, 44100)
+
+    print("\nADD WHITE NOISE w/ SD=0.01")
+    signal = addGaussianWhiteNoise(startSignal, 0.01)
+    print("min: %s   max: %s   %s percent clipped" % (min(signal), max(signal), proportionClipping(signal)*100))
+    sf.write("wavs/gainTests/440sineNoise0-01.wav", signal, 44100)
+
+    print("\nADD WHITE NOISE w/ SD=0.05")
+    signal = addGaussianWhiteNoise(startSignal, 0.05)
+    print("min: %s   max: %s   %s percent clipped" % (min(signal), max(signal), proportionClipping(signal)*100))
+    sf.write("wavs/gainTests/440sineNoise0-05.wav", signal, 44100)
+
+    print("\nADD WHITE NOISE w/ SD=0.1")
+    signal = addGaussianWhiteNoise(startSignal, 0.1)
+    print("min: %s   max: %s   %s percent clipped" % (min(signal), max(signal), proportionClipping(signal)*100))
+    sf.write("wavs/gainTests/440sineNoise0-1.wav", signal, 44100)
+
+# signalGainTest2()
 
 
 # printPitchInfo(440)

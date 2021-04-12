@@ -20,15 +20,15 @@ import soundfile as sf
 #       36 from mean    (since each of the 12 HPS lines (each corresponding to just one other combination of hyperparameters other than b - see (*)) can be combined with any of the 3 lines from AMDF)
 #       36 from median  (the same as for mean)
 csvData =  {"signalType" : "", "algorithm" : "", "b" : [0.5,1,2], "isCustomFFT" : [False, True], "numDownsamples" : [2,4,6], "octaveTrick" : [False,True], "sampleRate" : 44100,
-            "expectedRange" : [20,20000], "instrument" : "n/a", "noise" : 0,"extraGain" : 0, "windowFunction" : "rectangle", "trueFreq" : 0, "predFreq" : 0, "time" : 0, 
+            "expectedMin" : 20, "expectedMax" : 20000, "instrument" : "n/a", "noise" : 0,"extraGain" : 0, "windowFunction" : "rectangle", "trueFreq" : 0, "predFreq" : 0, "time" : 0, 
             "percentErr" : 0, "absMidiErr": 0, "correctNote" : 0, "correctNoteWithOctaveErr" : 0}
 
 
-# Want to do tests of all hyperparameter combinations with 100 signals total:
-#       50 GENERATED SIGNALS 
+# Want to do tests of all hyperparameter combinations with 250 signals total:
+#       125 GENERATED SIGNALS 
 #           (randomise frequency uniformly on MIDI scale (which is essentially a log(Hz) scale) with resolution of 0.5 and randomise sampleRate as either 22050Hz or 44100Hz)
 #               (also for sineWithHarmonics, randomise the number of harmonics uniformly between 10 and 20 (inclusive))
-#       50 WAV SIGNALS (INSTRUMENT SAMPLES) 
+#       125 WAV SIGNALS (INSTRUMENT SAMPLES) 
 #           (randomise instrument and note)
 # Since there is randomisation going on we want to keep track of these combinations so that we don't end up repeating signals as this would be a waste of computation time
 
@@ -38,10 +38,10 @@ wavFilesRecord = "testRecords/optimisationTest-wavFiles.txt"
 
 #define the number of tests up here so that they can be easily changed - allowing us to stop and start testing as we want
 generatedTestStartNum = 1
-generatedTestEndNum = 2
+generatedTestEndNum = 125
 
-wavTestStartNum = 3
-wavTestEndNum = 4
+wavTestStartNum = 126
+wavTestEndNum = 250
 
 ## GENERATED SIGNALS
 freqSRTypeCombinations = [""]
@@ -68,8 +68,10 @@ for testCount in range(generatedTestStartNum,generatedTestEndNum+1):
 
     with open(freqSRTypeCombinationsRecord, "a") as f:
         f.write(freqSRType + "\n")
-
-    expectedRange = [max(20, freq/8), min(20000, freq*8)] #Give an expected frequency range of at least 3 octaves either side of the true frequency (whilst staying within the range of human hearing)
+    
+    #Give an expected frequency range of at least 3 octaves either side of the true frequency (whilst staying within the range of human hearing)
+    expectedMin = max(20, freq/8)
+    expectedMax = min(20000, freq*8)
 
     if signalType == "sine":
         signal = signalGenerator.getSine(freq, 2048, sampleRate)
@@ -84,12 +86,13 @@ for testCount in range(generatedTestStartNum,generatedTestEndNum+1):
 
     csvData["signalType"] = signalType
     csvData["sampleRate"] = sampleRate
-    csvData["expectedRange"] = expectedRange
+    csvData["expectedMin"] = expectedMin
+    csvData["expectedMax"] = expectedMax
     csvData["trueFreq"] = freq
 
     testToCSV(signal, csvData, csvFile)
 
-    print("%s/100 done. %s" % (testCount, freqSRType))
+    print("%s/%s done. %s" % (testCount, wavTestEndNum, freqSRType))
 
 
 ## WAV SIGNALS
@@ -117,7 +120,8 @@ for testCount in range(wavTestStartNum,wavTestEndNum+1):
     with open(wavFilesRecord, "a") as f:
         f.write(filePath + "\n")
 
-    expectedRange = [max(20, instrumentRanges[instrument][0]), min(20000, instrumentRanges[instrument][1])]
+    expectedMin = max(20, instrumentRanges[instrument][0])
+    expectedMax = min(20000, instrumentRanges[instrument][1])
 
     signalType = instrumentFolderNames[instrument] + noteName
 
@@ -126,10 +130,11 @@ for testCount in range(wavTestStartNum,wavTestEndNum+1):
 
     csvData["signalType"] = signalType
     csvData["sampleRate"] = sampleRate
-    csvData["expectedRange"] = expectedRange
+    csvData["expectedMin"] = expectedMin
+    csvData["expectedMax"] = expectedMax
     csvData["trueFreq"] = midiToFreq(midiNote)
     csvData["instrument"] = instrument
 
     testToCSV(signal, csvData, csvFile)
 
-    print("%s/100 done. %s" % (testCount, filePath))
+    print("%s/%s done. %s" % (testCount, wavTestEndNum, filePath))

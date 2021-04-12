@@ -36,8 +36,8 @@ def testToCSV(signal, testInfo, csvFilePath):
         ##      zerocross, autocorrelation, AMDF, naiveFT, naiveFTWithPhase, cepstrum, HPS, trimmedMean (with trimSize=2/7), median
 
         sampleRate = testInfo["sampleRate"]
-        expectedMin = testInfo["expectedRange"][0]
-        expectedMax = testInfo["expectedRange"][1]
+        expectedMin = testInfo["expectedMin"]
+        expectedMax = testInfo["expectedMax"]
 
         # The following lists are already filled in to allow for indexing while we iterate through all desired hyperparameter values
         #   Since b is the only hyperparameter affecting just one algorithm its results are saved in a sub-list so that the mean & median predictions may be
@@ -136,6 +136,3 @@ def testToCSV(signal, testInfo, csvFilePath):
                         f.write(dictionaryToCSVLine(testInfo,"median",testInfo["b"][bIndex],isCustomFFT,numDownsamples,octaveTrick, pred, time))
 
 
-# TODO: REWRITE f.write(...) LINES SO THAT THEY CONTAIN ALL REQUIRED HEADERS AND ALSO KEEP UP TO DATE WITH HYPERPARAMETER VALUES
-#       TIP: USE THE FUNCTION dictionaryToCSVLine(...)
-#       ALSO - rewrite prediction function calls to include new parameters

@@ -1,1 +1,0 @@
-signalType, algorithm, b, isCustomFFT, numDownsamples, octaveTrick, sampleRate, expectedRange, instrument, noise, extraGain, windowFunction, trueFreq, predFreq, time, percentErr, absMidiErr, correctNote, correctNoteWithOctaveErr
