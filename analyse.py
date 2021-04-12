@@ -122,6 +122,37 @@ def printOptimisationTestAnalysis():
 
 printOptimisationTestAnalysis()
 
+def printPerformanceTestAnalysis():
+    print("zerocross")
+    getMeanTimeAndErrors({"algorithm" : ["zerocross"]}, "csvs/performanceTest.csv", True)
+    print()
+
+    print("autocorrelation")
+    getMeanTimeAndErrors({"algorithm" : ["autocorrelation"]}, "csvs/performanceTest.csv", True)
+    print()
+
+    print("AMDF")
+    getMeanTimeAndErrors({"algorithm" : ["AMDF"]}, "csvs/performanceTest.csv", True)
+    print()
+
+    print("naiveFT")
+    getMeanTimeAndErrors({"algorithm" : ["naiveFT"]}, "csvs/performanceTest.csv", True)
+    print()
+
+    print("naiveFTWithPhase")
+    getMeanTimeAndErrors({"algorithm" : ["naiveFTWithPhase"]}, "csvs/performanceTest.csv", True)
+    print()
+
+    print("cepstrum")
+    getMeanTimeAndErrors({"algorithm" : ["cepstrum"]}, "csvs/performanceTest.csv", True)
+    print()
+
+    print("HPS")
+    getMeanTimeAndErrors({"algorithm" : ["HPS"]}, "csvs/performanceTest.csv", True)
+    print()
+
+printPerformanceTestAnalysis()
+
 ## For use with old csv format (i.e. generatedSignalsTest.csv and wavTests.csv)
 # separate results based firstly by algorithm and secondly by type of wave
 def getDictionaryOfErrors(csvFilePath):
