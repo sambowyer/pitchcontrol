@@ -1,11 +1,12 @@
 from predict import zerocross, autocorrelation, AMDF, naiveFT, cepstrum, HPS, naiveFTWithPhase
 import signalGenerator
 from PitchProfile import PitchProfile
-from pitchShift import phaseVocoderPitchShift, phaseVocoderStretch, matchPitch
+from pitchShift import phaseVocoderPitchShift, phaseVocoderStretch, matchPitch, correctPitch
 from helpers import *
 import soundfile as sf
 from timeit import default_timer as timer
 import os.path
+import random, pickle
 
 def testAllAlgorithmsToCSV(signal, sampleRate, signalType, trueFreq, csvFilePath):
     '''If the document csvFilePath already exists, this function assumes that the file already contains headers: signalName, sampleRate, algorithm, algorithmParameters, trueFreq, predFreq, time
@@ -738,8 +739,129 @@ def signalGainTest2():
     print("min: %s   max: %s   %s percent clipped" % (min(signal), max(signal), proportionClipping(signal)*100))
     sf.write("wavs/gainTests/440sineNoise0-1.wav", signal, 44100)
 
-# signalGainTest2()
+def generatedSignalMelodies():
+    sampleRate = 44100
+    signalTypes = ["sine", "saw", "square", "triangle", "sineWithHarmonics"]
+    noteLengths = [11025,22050,22050,22050]
+    for melodyCount in range(20):
+        signal = []
+        for noteCount in range(5):
+            freq = midiToFreq(48 + random.randrange(36))
+            signalType = signalTypes[random.randrange(5)]
+            if signalType == "sineWithHarmonics":
+                numHarmonics = random.randrange(10,21)
+                signalType += "(%s)" % (numHarmonics)
 
+            noteLength = noteLengths[random.randrange(2)]
+
+            if signalType == "sine":
+                signal += signalGenerator.getSine(freq, noteLength, sampleRate)
+            elif signalType == "saw":
+                signal += signalGenerator.getSaw(freq, noteLength, sampleRate)
+            elif signalType == "square":
+                signal += signalGenerator.getSquare(freq, noteLength, sampleRate)
+            elif signalType == "triangle":
+                signal += signalGenerator.getTriangle(freq, noteLength, sampleRate)
+            else:
+                signal += signalGenerator.getSineWithHarmonics(freq, noteLength, sampleRate, numHarmonics)
+
+        sf.write("wavs/generatedSignalMelodies/generatedSignalMelody%s.wav" % (melodyCount), signal, sampleRate)
+        print("File %s done." % (melodyCount))
+
+def generateSignalCanvases():
+    for signalType in ("sine", "saw", "square", "triangle", "sineWithHarmonics(20)"):
+        signal = []
+        if signalType == "sine":
+            signal = signalGenerator.getSine(midiToFreq(60), 44100*6, 44100)
+        elif signalType == "saw":
+            signal = signalGenerator.getSaw(midiToFreq(60), 44100*6, 44100)
+        elif signalType == "square":
+            signal = signalGenerator.getSquare(midiToFreq(60), 44100*6, 44100)
+        elif signalType == "triangle":
+            signal = signalGenerator.getTriangle(midiToFreq(60), 44100*6, 44100)
+        else:
+            signal = signalGenerator.getSineWithHarmonics(midiToFreq(60), 44100*6, 44100, 20)
+
+        sf.write("wavs/generatedSignalMelodies/%sCanvas.wav" % (signalType), signal, 44100)
+
+def ratioPitchShiftingTest1():
+    signal, sampleRate = sf.read("wavs/instrumentMelodies/BBCFlute/BBCFluteMelody6.wav")
+    signal = toMono(signal)
+    sf.write("wavs/pitchShiftingTests/flute.wav", signal, sampleRate)
+
+    for windowLength in (512, 1024, 2048, 4096, 8192):
+        shiftedUp = phaseVocoderPitchShift(signal, sampleRate, 2**(1/12), windowLength=windowLength, overlapLength=3*windowLength//4, windowFunction=getHanningWindow(windowLength))
+        shiftedDown = phaseVocoderPitchShift(signal, sampleRate, 2**(-1/12), windowLength=windowLength, overlapLength=3*windowLength//4, windowFunction=getHanningWindow(windowLength))
+        sf.write("wavs/pitchShiftingTests/fluteUp%s.wav" % (windowLength), shiftedUp, sampleRate)
+        sf.write("wavs/pitchShiftingTests/fluteDown%s.wav" % (windowLength), shiftedDown, sampleRate)
+
+def pitchCorrectingTest1():
+    signal, sampleRate = sf.read("wavs/instrumentMelodies/Detuned/BBCCello/BBCCelloMelody6DETUNED.wav")
+    signal = toMono(signal)
+    sf.write("wavs/pitchShiftingTests/celloDETUNED.wav", signal, sampleRate)
+
+
+    for windowLength in (2048, 4096, 8192):
+        pp = PitchProfile("wavs/pitchShiftingTests/celloDETUNED.wav", 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, blockSize=windowLength, overlap=0)
+        pp.analysePitch()
+        corrected = correctPitch(pp)
+        sf.write("wavs/pitchShiftingTests/celloCorrected%s.wav" % (windowLength), corrected, sampleRate)
+
+def pitchMatchingTest2():
+    signal, sampleRate = sf.read("wavs/instrumentMelodies/BBCTrumpet/BBCTrumpetMelody6.wav")
+    signal = toMono(signal)
+    sf.write("wavs/pitchShiftingTests/trumpet.wav", signal, sampleRate)
+
+    signal, sampleRate = sf.read("wavs/generatedSignalMelodies/sineCanvas.wav")
+    sf.write("wavs/pitchShiftingTests/sineCanvas.wav", signal, sampleRate)
+
+    for windowLength in (2048, 4096, 8192):
+        pp1 = PitchProfile("wavs/pitchShiftingTests/trumpet.wav", 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, instrument="trumpet", blockSize=windowLength, overlap=windowLength//2)
+        pp1.analysePitch()
+        pp1.printLog()
+
+        pp2 = PitchProfile("wavs/pitchShiftingTests/sineCanvas.wav", 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, blockSize=windowLength, overlap=windowLength//2)
+        pp2.analysePitch()
+
+        matched = matchPitch(pp2,pp1)
+        sf.write("wavs/pitchShiftingTests/sineTrumpetMatched%s.wav" % (windowLength), matched, sampleRate)
+
+
+def pickleAllPVTestMelodies():
+    ## First the generated signal melodies
+    for melodyCount in range(20):
+        pp = PitchProfile("/wavs/generatedSignalMelodies/generatedSignalMelody%s.wav" % (melodyCount), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, overlap=0)
+        pp.analysePitch()
+        pickle.dump(pp, open("/wavs/generatedSignalMelodies/generatedSignalMelody%s.p" % (melodyCount), "wb"))
+
+    # And the generated signal canvases
+    for signalType in ("sine", "saw", "square", "triangle", "sineWithHarmonics(20)"):
+        pp = PitchProfile("/wavs/generatedSignalMelodies/%sCanvas.wav" % (signalType), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, overlap=0)
+        pp.analysePitch()
+        pickle.dump(pp, open("/wavs/generatedSignalMelodies/%sCanvas.p" % (signalType), "wb"))
+
+
+    ## Now the instrument melodies
+    for instrument in ("BBCCello", "BBCViolin", "BBCFlute", "BBCTrumpet", "LABSPiano", "CleanGuitar", "OverdriveGuitar"):
+        for melodyCount in range(1,11):
+            # Pickle main (in-tune) melody file
+            pp = PitchProfile("/wavs/instrumentMelodies/%s/%sMelody%s.wav" % (instrument, instrument, melodyCount), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, overlap=0)
+            pp.analysePitch()
+            pickle.dump(pp, open("/wavs/instrumentMelodies/%s/%sMelody%s.p" % (instrument, instrument, melodyCount), "wb"))
+
+            # Pickle detuned melody file
+            pp = PitchProfile("/wavs/instrumentMelodies/Detuned/%s/%sMelody%sDETUNED.wav" % (instrument, instrument, melodyCount), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, overlap=0)
+            pp.analysePitch()
+            pickle.dump(pp, open("/wavs/instrumentMelodies/Detuned/%s/%sMelody%sDETUNED.p" % (instrument, instrument, melodyCount), "wb"))
+
+        # And the instrument canvases
+        pp = PitchProfile("/wavs/instrumentMelodies/%s/%sCanvas.wav" % (instrument, instrument), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, overlap=0)
+        pp.analysePitch()
+        pickle.dump(pp, open("/wavs/instrumentMelodies/%s/%sCanvas.p" % (instrument, instrument), "wb"))
+
+pitchMatchingTest2()
+
+# pickleAllPVTestMelodies()
 
 # printPitchInfo(440)
 

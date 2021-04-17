@@ -14,7 +14,7 @@ def getPercentageError(expectedFreq, actualFreq):
     return (abs(expectedFreq-actualFreq))/expectedFreq
 
 #(1)
-def getPercentageMIDIError(expectedFreq, actualFreq):
+def getAbsoluteMIDIError(expectedFreq, actualFreq):
     return abs(getMidiNoteWithCents(expectedFreq) - getMidiNoteWithCents(actualFreq))
 
 #(2)
@@ -25,7 +25,6 @@ def isWithin100Cents(expectedFreq, actualFreq):
 def isWithin100CentsWithOctaveError(expectedFreq, actualFreq):
     diff = abs(getMidiNoteWithCents(expectedFreq) - getMidiNoteWithCents(actualFreq))
     return int(diff <= 0.5 or (diff <= 12.5 and diff >= 11.5))
-
 
 def getMeanTimeAndErrors(conditions, csvFilePath, verbose=False):
     '''Returns a list of the form [mean time, mean percentErr, mean absMidiErr, mean correctNote, mean correctNoteWithOctaveErr] 
@@ -182,7 +181,7 @@ def getDictionaryOfErrors(csvFilePath):
                 expectedFreq = float(data[4])
                 actualFreq = float(data[5])
 
-                errors = [getPercentageError(expectedFreq,actualFreq), getPercentageMIDIError(expectedFreq, actualFreq), isWithin100Cents(expectedFreq, actualFreq), isWithin100CentsWithOctaveError(expectedFreq, actualFreq)]
+                errors = [getPercentageError(expectedFreq,actualFreq), getAbsoluteMIDIError(expectedFreq, actualFreq), isWithin100Cents(expectedFreq, actualFreq), isWithin100CentsWithOctaveError(expectedFreq, actualFreq)]
 
                 dictionary[data[2]][data[0]].append(errors)
 

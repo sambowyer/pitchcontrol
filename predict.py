@@ -63,7 +63,7 @@ def autocorrelation(signal, sampleRate, expectedMin=20, expectedMax=20000):
 
     return sampleRate / maxM
 
-def AMDF(signal, sampleRate, b=1, expectedMin=20, expectedMax=20000):
+def AMDF(signal, sampleRate, b=0.5, expectedMin=20, expectedMax=20000):
     '''Average Magnitude Differential Function Pitch Detection
     Predicts the frequency of a mono signal by finding the time interval (of m samples) for which the signal most consistently repeats itself.
     AMDF uses the Euclidean distance (to the power of b) between signal values at intervals of m samples to find this optimal m.'''
@@ -214,7 +214,7 @@ def cepstrum(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000)
     return 1/quefrencies[maxBin]
     # return sampleRate/maxBin
 
-def HPS(signal, sampleRate, isCustomFFT, numDownsamples, expectedMin=20, expectedMax=20000, octaveTrick=False):
+def HPS(signal, sampleRate, isCustomFFT, numDownsamples, expectedMin=20, expectedMax=20000, octaveTrick=True):
     '''Harmonic Product Spectrum Pitch Detection
     Predicts the frequency of a mono signal by first computing (the magnitudes within) its Fourier-transform and then resampling (downsampling) this by factors of 1/2, 1/3, 1/4, etc. .
     Then we may multiply these downsampled versions and can expect a peak correlating to the fundamental frequency of the original signal.'''

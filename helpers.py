@@ -186,7 +186,7 @@ def getPercentageError(expectedFreq, actualFreq):
     return (abs(expectedFreq-actualFreq))/expectedFreq
 
 #(1)
-def getPercentageMIDIError(expectedFreq, actualFreq):
+def getAbsoluteMIDIError(expectedFreq, actualFreq):
     return abs(getMidiNoteWithCents(expectedFreq) - getMidiNoteWithCents(actualFreq))
 
 #(2)

@@ -78,11 +78,61 @@ def compressIndexedPitchData(indexedPitchData):
     while i < len(indexedPitchData):
         if abs(getMidiNoteWithCents(indexedPitchData[i][2]) - getMidiNoteWithCents(sectionStartPitch)) <= 0.25:
             indexedPitchData[i-1][1] = indexedPitchData[i][1]
+            indexedPitchData
             del indexedPitchData[i]
             i -= 1
         else:
             sectionStartPitch = indexedPitchData[i][2]
         i += 1
+
+def compressIndexedPitchData2(indexedPitchData):
+    currentSectionPitches = [indexedPitchData[0][2]]
+    deviatingPitches = []
+    sectionPitch = indexedPitchData[0][2]
+    compressedPitchData = []
+
+    sectionStartIndex = indexedPitchData[0][0]
+    sectionEndIndex = indexedPitchData[0][1]
+
+    numDeviatingEstimates = 0
+
+    i = 1
+
+    while i < len(indexedPitchData):
+        # print(i)
+        freqDiff = abs(getMidiNoteWithCents(indexedPitchData[i][2]) - getMidiNoteWithCents(sectionPitch))
+        if freqDiff <= 0.25 or abs(freqDiff - 12) <= 0.25:
+            currentSectionPitches.append(indexedPitchData[i][2])
+            sectionEndIndex = indexedPitchData[i][1]
+
+            numDeviatingEstimates = 0
+            
+            if len(currentSectionPitches) % 2 == 0:
+                sectionPitch = getMedian(currentSectionPitches[1:])
+            else:
+                sectionPitch = getMedian(currentSectionPitches)
+
+        else:
+            numDeviatingEstimates += 1
+            deviatingPitches.append(indexedPitchData[i][2])
+
+            if numDeviatingEstimates >= 3:
+                compressedPitchData.append([sectionStartIndex, sectionEndIndex, sectionPitch])
+                currentSectionPitches = [deviatingPitches[0]]
+                sectionPitch = deviatingPitches[0]
+                deviatingPitches = []
+
+                sectionStartIndex = indexedPitchData[i-3][0]
+                sectionEndIndex = indexedPitchData[i-3][1]
+
+                numDeviatingEstimates = 0
+                i -= 2
+
+        i += 1
+
+    compressedPitchData.append([sectionStartIndex, sectionEndIndex, sectionPitch])
+
+    return compressedPitchData
             
 def removeShortSections(indexedPitchData, minAcceptableSectionLength):
     i=1
@@ -105,15 +155,20 @@ def matchPitch(originalPitchProfile, matchingPitchProfile):
     matchingIndexedPitchData = matchingPitchProfile.getIndexedPitchData()
 
     #compress both indexedPitchData lists into 'sections' where the pitch stays 'stable' i.e. stays within +/-10 cents of the section's starting pitch
-    compressIndexedPitchData(originalIndexedPitchData)
-    compressIndexedPitchData(matchingIndexedPitchData)
+    # compressIndexedPitchData(originalIndexedPitchData)
+    # compressIndexedPitchData(matchingIndexedPitchData)
 
-    removeShortSections(originalIndexedPitchData, originalPitchProfile.blockSize*8 + 1)
-    removeShortSections(matchingIndexedPitchData, matchingPitchProfile.blockSize*8 + 1)
+    originalIndexedPitchData = compressIndexedPitchData2(originalIndexedPitchData)
+    matchingIndexedPitchData = compressIndexedPitchData2(matchingIndexedPitchData)
+
+    removeShortSections(originalIndexedPitchData, 3*originalPitchProfile.blockSize//2 + 1)
+    removeShortSections(matchingIndexedPitchData, 3*matchingPitchProfile.blockSize//2 + 1)
+
+    print(originalIndexedPitchData, matchingIndexedPitchData)
 
     newSignal = []
     isMono = sf.info(originalPitchProfile.location).channels == 1
-    analysisWindowLength = originalPitchProfile.blockSize//8
+    analysisWindowLength = originalPitchProfile.blockSize//2
     overlap = 3*analysisWindowLength//4
 
     #for each intersection of the newly found 'stable sections' we must now shift the frequency of the original signal to match the matching signal's frequency

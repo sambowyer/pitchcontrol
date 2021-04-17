@@ -1,102 +1,145 @@
 import sys, getopt, math, logging, argparse
-from predict import zerocross, autocorrelation, AMDF, naiveFT, cepstrum, HPS
+from predict import zerocross, autocorrelation, AMDF, naiveFT, naiveFTWithPhase, cepstrum, HPS
 from helpers import *
-import signalGenerator
+import pitchShift
+from PitchProfile import PitchProfile
 import numpy as np
 from timeit import default_timer as timer
 import soundfile as sf
 
-shortArgs = "hvg:da:b:cn:pr:sm:f:i:o:"
-longArgs = ["help", "verbose", "generate=", "detect", "algorithm=", "b=", "customFFT", "numDownsamples=", "profile", "range=", "shift", "mode=", "factor=", "input=","output="]
-# hyperparameters added on end of command
+helpMessage = '''pitchcontrol.py usage
+    pitchcontrol [-cdms] [inputFile] (numSemitones) (matchingFile) [outputFile]
+
+-c  --correct   Apply pitch correction to the input file.
+-d  --detect    Detect the pitch of the input file with all detection algorithms.
+-h  --help      Print this usage information to output.
+-m  --match     Shift the input file to match the melody in a 'matching' file.
+-s  --shift     Shift the input file by a specified number of semitones.
+'''
 
 def main():
-    try:
-        opts, args = getopt.getopt(sys.argv[1:],shortArgs,longArgs)
-    except getopt.GetoptError:
-        print('pitchcontrol.py -i <inputfile> -o <outputfile>')
-        sys.exit(2)
+    args = sys.argv[1:]
 
-    print(opts, args)
-    verbose = False
-    inputFile = ""
-    outputFile = ""
-    for opt, arg in opts:
-        if opt in ("-h", "--help"):
-            print('''pitchcontrol.py usage
+    if len(args) == 0:
+        print(helpMessage)
 
-A command-line tool for signal generating, pitch detection and pitch shifting.
+    elif args[0] in ("-d", "--detect") and len(args) == 2:
+        detectPitch(args[1])
 
-        (python[3]) pitchcontrol [-abcdghimnoprstv] [output file]
+    elif args[0] in ("-c", "--correct") and len(args) == 3:
+        correctPitch(args[1], args[2])
 
--a  --algorithm         Algorithm to use in pitch detection. Must be one of 'zerocross', 'autocorrelation', 'AMDF', 'naiveFT', 'cepstrum', 'HPS' or 'median' - default='zerocross'.
--b  --b                 Hyperparameter for exponent in AMDF calculation. Default value is 1.
--c  --customFFT         Select if you want to use a custom FFT implementation in pitch detection rather than the default numpy implementation.
--d  --detect            Select if you want to use the pitch detection features rather than signal generating or pith shifting.
--g  --generate          Must be followed by:
-                            - signal type (one of sine/saw/square/triangle/sine[num] - if [num] is provided (as an integer) this will generate a sine wave with [num] harmonics.
-                        Optional arguments may also be provided (in this order):
-                            - frequency (Hz)    - default = 440
-                            - length (samples)  - default = 44100
-                            - sample rate (Hz)  - default = 44100
--h  --help              Print this usage information to output.
--i  --input             File for pitch detection or pitch shifting.
--m  --mode              Mode of pitch shifting. Must be one of the following:
-                            - 'ratio'   - must be followed by a ratio to pitch shift the input file by.
-                            - 'correct' - attempts to correct the pitches of the input file so that they are all in tune.
-                            - 'match'   - must be followed by a file whose pitch-over-time profile will be used to retune the input file.
--n  --numDownSamples    Hyperparameter for HPS calculation.
--o  --output            Filename for the output of signal generating, pitch shifting or pitch profile log.
--p  --profile           Select if you want to create (and then save as a .pkl along with a corresponding log file with name specified by -o/--output) a pitch profile of the input file.
--r  --range             Range of expected frequencies in pitch detection. Either write in the form 'x-y' where x and y are numerical upper and lower bounds in Hz, or select from one of 'piano', 'guitar', 'cello', 'violin', 'voice', 'bass-guitar', 'trumpet' or 'flute'.
--s  --shift             Select if you want to use the pitch shifting features rather than signal generating or pith detection.
--v  --verbose           Select if you want text output as operations are processing.
+    elif args[0] in ("-m", "--match") and len(args) == 4:
+        matchPitch(args[1], args[2], args[3])
 
-Examples:
-1. Create a sine wave with 10 harmonics of frequency 220Hz, length 1000 samples and sample rate 22050Hz and save to 'sine220.wav':
-        (python[3]) pitchcontrol.py -g sine10 220 1000 22050 -o sine220.wav
-        (python[3]) pitchcontrol.py --generate sine10 220 1000 22050 --output sine220.wav
+    elif args[0] in ("-s", "--shift") and len(args) == 4:
+        shift(args[1], args[2], float(args[3]))
 
-2. Detect the pitch of a file 'audio.wav' using AMDF with b=1.5 and the expected frequency range of a trumpet:
-        (python[3]) pitchcontrol.py -d -a AMDF -b 1.5 -r trumpet -i audio.wav
-        (python[3]) pitchcontrol.py --detect --algorithm AMDF --b 1.5 --range trumpet --input audio.wav
-
-3. Write out a pitch profile of a file 'audio.wav' using naiveFT and customFFT to 'audioprofile.log' (the PitchProfile pbject will be written to 'audioprofile.pkl'):
-        (python[3]) pitchcontrol.py -p -a cepstrum -c -o audioprofile.log
-        (python[3]) pitchcontrol.py --profile --algorithm cepstrum --customFFT --output audioprofile.log
-
-4. Match the pitch of the PitchProfile stored in 'match.pkl' using the source sound file 'audio.wav' and output it to 'matchedAudio.wav':
-        (python[3]) pitchcontrol.py -s -m match match.pkl -i audio.wav -o  matchedAudio.wav
-        (python[3]) pitchcontrol.py --shift --mode match match.pkl --input audio.wav --output matchedAudio.wav
+    else:
+        print(helpMessage)
 
 
-N.B.:   Input files may either be .wav or .pkl if the .pkl file is storing a PitchProfile object with its corresponding .wav file still in its original location.
-        Outfile sound files must be in .wav format. If this file extension is not entered it will be assumed.
-        
-''')
-        if opt in ("-v","--verbose"):
-            verbose = True
-        else:
-            print("B")
-        # logging.basicConfig(stream=sys.stdout, level=logging.DEBUG)
+def detectPitch(file):
+    predictions = []
+    executionTimes = []
 
-    # data, samplerate = sf.read(file)
+    signal, sampleRate = sf.read(file, always_2d=True)
+    signal = toMono(signal)
 
+    start = timer()
+    pred = zerocross(signal, sampleRate)
+    end = timer()
+    predictions.append(pred)
+    executionTimes.append(end-start)
+    print("zerocross:        %s     (took %ss)" % (getPitchInfo(pred), end-start))
 
+    
+    if len(signal) > 2048:
+        start = timer()
+        pred = autocorrelation(signal[:2048], sampleRate)
+        end = timer()
+    else:
+        start = timer()
+        pred = autocorrelation(signal, sampleRate)
+        end = timer()
+    predictions.append(pred)
+    executionTimes.append(end-start)
+    print("autocorrelation:  %s     (took %ss)" % (getPitchInfo(pred), end-start))
+
+    if len(signal) > 2048:
+        start = timer()
+        pred = AMDF(signal[:2048], sampleRate)
+        end = timer()
+    else:
+        start = timer()
+        pred = AMDF(signal, sampleRate)
+        end = timer()
+    predictions.append(pred)
+    executionTimes.append(end-start)
+    print("AMDF:             %s     (took %ss)" % (getPitchInfo(pred), end-start))
+
+    start = timer()
+    pred = naiveFT(signal, sampleRate, True)
+    end = timer()
+    predictions.append(pred)
+    executionTimes.append(end-start)
+    print("naiveFT:          %s     (took %ss)" % (getPitchInfo(pred), end-start))
+
+    start = timer()
+    pred = naiveFTWithPhase(signal, sampleRate, True)
+    end = timer()
+    predictions.append(pred)
+    executionTimes.append(end-start)
+    print("naiveFTWithPhase: %s     (took %ss)" % (getPitchInfo(pred), end-start))
+
+    start = timer()
+    pred = cepstrum(signal, sampleRate, True)
+    end = timer()
+    predictions.append(pred)
+    executionTimes.append(end-start)
+    print("cepstrum:        %s     (took %ss)" % (getPitchInfo(pred), end-start))
+
+    start = timer()
+    pred = HPS(signal, sampleRate, True, 2)
+    end = timer()
+    predictions.append(pred)
+    executionTimes.append(end-start)
+    print("HPS:              %s     (took %ss)" % (getPitchInfo(pred), end-start))
+
+    
+    print("median:           %s     (took %ss)" % (getPitchInfo(getMedian(predictions)), sum(executionTimes)))
+
+    print("mean of middle 3: %s     (took %ss)" % (getPitchInfo(getTrimmedMean(predictions, 2/7)), sum(executionTimes)))
+
+def correctPitch(inputFile, outputFile):
+    sampleRate = sf.info(inputFile).samplerate
+    pp = PitchProfile(inputFile, sampleRate, "naiveFTWithPhase", {"isCustomFFT" : True}, blockSize=8192, overlap=0)
+    pp.analysePitch()
+    newSignal = pitchShift.correctPitch(pp)
+    sf.write(outputFile, newSignal, sampleRate)
+
+def matchPitch(inputFile, matchingFile, outputFile):
+    sampleRateIn = sf.info(inputFile).samplerate
+    sampleRateMatching = sf.info(matchingFile).samplerate
+    if sampleRateIn != sampleRateMatching:
+        print("Input file and matching file must have the same sample rate.")
+        return
+
+    pp1 = PitchProfile(inputFile, sampleRateIn, "naiveFTWithPhase", {"isCustomFFT" : True}, blockSize=8192, overlap=0)
+    pp1.analysePitch()
+    pp2 = PitchProfile(matchingFile, sampleRateIn, "naiveFTWithPhase", {"isCustomFFT" : True}, blockSize=8192, overlap=0)
+    pp2.analysePitch()
+
+    newSignal = pitchShift.matchPitch(pp1, pp2)
+    sf.write(outputFile, newSignal, sampleRateIn)
+
+def shift(inputFile, outputFile, numSemitones):
+    signal, sampleRate = sf.read(inputFile, always_2d=True)
+    signal = toMono(signal)
+
+    newSignal = pitchShift.phaseVocoderPitchShift(signal, sampleRate, 2**(numSemitones/12), windowLength=2048, overlapLength=1536, windowFunction=getHanningWindow(2048))
+    sf.write(outputFile, newSignal, sampleRate)
 
 
 if __name__ == "__main__":
-    # parser = argparse.ArgumentParser()
-    # parser.add_argument("-v", "--verbose", action="store_true")
-
-    # parser.add_argument("-g", "--generate", action="store_true", help="Generate a signal of type 'sine'/'saw'/'square'/'triangle' with given frequency (Hz), length (samples), and sample rate (Hz) and save to output file.")
-
-    # parser.add_argument("-d", "--detect", action="store_true", help="Generate a signal of type 'sine'/'saw'/'square'/'triangle' with given frequency (Hz), length (samples), and sample rate (Hz) and save to output file.")
-
-
-    # args = parser.parse_args()
-
-
-
-
     main()

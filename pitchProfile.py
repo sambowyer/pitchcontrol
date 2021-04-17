@@ -1,4 +1,4 @@
-from predict import zerocross, autocorrelation, AMDF, naiveFT, cepstrum, HPS
+from predict import zerocross, autocorrelation, AMDF, naiveFT, naiveFTWithPhase, cepstrum, HPS
 from helpers import *
 from timeit import default_timer as timer
 import soundfile as sf
@@ -44,12 +44,12 @@ class PitchProfile:
 
         self.analysisTime = 0
 
-    def setExpectedFrequencyRange(self, min=20, max=20000, instrument=None):
+    def setExpectedFrequencyRange(self, minimum=20, maximum=20000, instrument=None):
         '''Changes the values corresponding to the keys "expectedMin" & "expectedMax" within the dictionary *detectionParams*
         If instrument is given as a string with the name of an instrument this function will attempt to set the min/max accordingly'''
         if instrument == None:
-            self.detectionParams["expectedMin"] = min
-            self.detectionParams["expectedMax"] = max
+            self.detectionParams["expectedMin"] = minimum
+            self.detectionParams["expectedMax"] = maximum
         elif instrument in instrumentRanges:
             self.detectionParams["expectedMin"] = instrumentRanges[instrument][0]
             self.detectionParams["expectedMax"] = instrumentRanges[instrument][1]
@@ -125,3 +125,6 @@ class PitchProfile:
 
         self.pitchData = pitchData
         self.analysisTime = end-start
+
+    def getSignal(self):
+        return sf.read(self.location)[0] 
