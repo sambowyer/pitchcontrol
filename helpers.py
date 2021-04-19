@@ -30,15 +30,19 @@ def noteNameToMidi(noteName):
 def noteNameToFreq(noteName):
     return midiToFreq(noteNameToMidi(noteName))
 
-def getPitchInfo(freq):
+def getPitchInfo(freq, round=False):
     cents = getCents(freq)
+    noteName = getNoteName(freq)
+    if round:
+        freq = "{:.3f}".format(freq)
     if cents >= 0:
-        return "%sHz - %s + %scents" % (freq, getNoteName(freq), cents)
+        return "%sHz - %s + %scents" % (freq, noteName, cents)
     else:
-        return "%sHz - %s - %scents" % (freq, getNoteName(freq), cents*-1)
+        return "%sHz - %s - %scents" % (freq, noteName, cents*-1)
 
-def printPitchInfo(freq):
-    print(getPitchInfo(freq))
+
+def printPitchInfo(freq, round=False):
+    print(getPitchInfo(freq, round))
 
 
 ## signal-based helpers

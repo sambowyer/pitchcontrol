@@ -1,5 +1,5 @@
 from predict import zerocross, autocorrelation, AMDF, naiveFT, naiveFTWithPhase, cepstrum, HPS
-from helpers import *
+from helpers import midiToFreq, getMidiNoteWithCents, getPitchInfo, getTrimmedMean, toMono
 from timeit import default_timer as timer
 import soundfile as sf
 
@@ -119,7 +119,10 @@ class PitchProfile:
         pitchData = []
         for sig in partialSignals:
             # print(len(sig))
-            pitchData.append(self.predictPitch([sig[i]*self.windowFunction[i] for i in range(len(sig))]))
+            prediction = self.predictPitch([sig[i]*self.windowFunction[i] for i in range(len(sig))])
+            if prediction == 0:
+                prediction = 2.2250738585072014e-308
+            pitchData.append(prediction)
 
         end = timer()
 

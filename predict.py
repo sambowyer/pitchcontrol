@@ -166,39 +166,29 @@ def cepstrum(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000)
     Predicts the frequency of a mono signal by finding the period which most strongly correlates to the distance between peaks in the Fourier-transform of the signal.
     Assuming the peaks in the Fourier transform are located at harmonics of the signal, this period should represent the distance between the harmonics, i.e. the fundamental period.'''
 
-    # plt.subplot(2, 1, 1)
-    # plt.plot(range(len(signal)), signal)
-
     freq_vector = np.fft.rfftfreq(len(signal), d=1/sampleRate)
     mags = np.abs(fft(signal, isCustomFFT))
     log_X = []
 
     #to supress potential (very rare) numpy warnings that come with some particular signals (e.g. a 900Hz square wave w/ length 2048 and sample rate 44100Hz) -
     #   not strictly necessary but leads to a better UX
+    zeroMagIndices = []
     if 0 in mags: 
         for i in range(len(mags)):
             if mags[i] == 0:
-                log_X.append(-float("inf"))
+                log_X.append(float("inf"))
+                zeroMagIndices.append(i)
             else:
                 log_X.append(np.log(mags[i]))
+        nonZeroMin = min(log_X)
+        for i in zeroMagIndices:
+            log_X[i] = nonZeroMin
     else:
         #faster processing possible in this case and no need to worry about warnings
         log_X = np.log(mags)
 
-    # maxLog = max(log_X)
-    # print(freq_vector[np.where(log_X == maxLog)])
-
     cepstrumBins = np.abs(fft(log_X, isCustomFFT))
     quefrencies = np.fft.rfftfreq(len(log_X), d=freq_vector[1]-freq_vector[0])
-
-    # print(cepstrumBins)
-    # print(quefrencies)
-    # print(len(cepstrumBins))
-    # print(len(quefrencies))
-
-    # plt.subplot(2, 1, 2)
-    # plt.plot(quefrencies[1:], cepstrumBins[1:])
-    # plt.plot(range(len(cepstrumBins)-1), cepstrumBins[1:])
 
     minExpectedBin = min(np.where(quefrencies >= 1/expectedMax)[0])
     maxExpectedBin = max(np.where(quefrencies <= 1/expectedMin)[0])
@@ -209,10 +199,8 @@ def cepstrum(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000)
         if cepstrumBins[i] > maxValue and cepstrumBins[i] < float("inf"):
             maxValue = cepstrumBins[i]
             maxBin = i
-    # print(maxBin, quefrencies[maxBin])
-    # plt.show()
+    
     return 1/quefrencies[maxBin]
-    # return sampleRate/maxBin
 
 def HPS(signal, sampleRate, isCustomFFT, numDownsamples, expectedMin=20, expectedMax=20000, octaveTrick=True):
     '''Harmonic Product Spectrum Pitch Detection

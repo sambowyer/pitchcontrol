@@ -26,7 +26,7 @@ def isWithin100CentsWithOctaveError(expectedFreq, actualFreq):
     diff = abs(getMidiNoteWithCents(expectedFreq) - getMidiNoteWithCents(actualFreq))
     return int(diff <= 0.5 or (diff <= 12.5 and diff >= 11.5))
 
-def getMeanTimeAndErrors(conditions, csvFilePath, verbose=False):
+def getMeanTimeAndErrors(conditions, csvFilePath, verbose=False, freqRange = [20,20000]):
     '''Returns a list of the form [mean time, mean percentErr, mean absMidiErr, mean correctNote, mean correctNoteWithOctaveErr] 
     where the mean values are taken across csv lines in *csvFilePath* that meet the conditions given in the dictionary *conditions*
         e.g. the conditions dictionary {isCustomFFT : [True]} will average out results of all test cases where isCustomFFT=True
@@ -38,6 +38,8 @@ def getMeanTimeAndErrors(conditions, csvFilePath, verbose=False):
         headers = f.readline().strip().replace(" ","").split(",")
         
         conditionIndices = []
+        trueFreqIndex = 13
+
         for condtionVar in conditions:
             headerIndex = 0
             for header in headers:
@@ -50,18 +52,21 @@ def getMeanTimeAndErrors(conditions, csvFilePath, verbose=False):
         while line:
             line = line.strip().replace(" ","").split(",")
 
-            meetsConditions = True
-            conditionIndex = 0
-            for condition in conditions:
-                if line[conditionIndices[conditionIndex]] not in conditions[condition]:
-                    meetsConditions = False
-                    break
-                conditionIndex += 1
+            trueFreq = float(line[trueFreqIndex])
+            if trueFreq >= freqRange[0] and trueFreq <= freqRange[1]:
 
-            if meetsConditions:
-                count += 1
-                for i in range(5):
-                    meanTimeAndErrors[i] += float(line[-(5-i)])
+                meetsConditions = True
+                conditionIndex = 0
+                for condition in conditions:
+                    if line[conditionIndices[conditionIndex]] not in conditions[condition]:
+                        meetsConditions = False
+                        break
+                    conditionIndex += 1
+
+                if meetsConditions:
+                    count += 1
+                    for i in range(5):
+                        meanTimeAndErrors[i] += float(line[-(5-i)])
 
             line = f.readline()
             line1 = False
@@ -118,8 +123,7 @@ def printOptimisationTestAnalysis():
     getMeanTimeAndErrors({"sampleRate" : ["44100"], "instrument" : ["n/a"]}, "csvs/optimisationTest.csv", True)
     print()
 
-
-printOptimisationTestAnalysis()
+# printOptimisationTestAnalysis()
 
 def printPerformanceTestAnalysis():
     print("zerocross")
@@ -150,7 +154,238 @@ def printPerformanceTestAnalysis():
     getMeanTimeAndErrors({"algorithm" : ["HPS"]}, "csvs/performanceTest.csv", True)
     print()
 
-printPerformanceTestAnalysis()
+# printPerformanceTestAnalysis()
+
+def printPerformanceTestAnalysisWithRanges():
+    print("zerocross")
+    getMeanTimeAndErrors({"algorithm" : ["zerocross"]}, "csvs/performanceTest.csv", True, [50,10000])
+    print()
+
+    print("autocorrelation")
+    getMeanTimeAndErrors({"algorithm" : ["autocorrelation"]}, "csvs/performanceTest.csv", True, [50,10000])
+    print()
+
+    print("AMDF")
+    getMeanTimeAndErrors({"algorithm" : ["AMDF"]}, "csvs/performanceTest.csv", True, [50,10000])
+    print()
+
+    print("naiveFT")
+    getMeanTimeAndErrors({"algorithm" : ["naiveFT"]}, "csvs/performanceTest.csv", True, [50,10000])
+    print()
+
+    print("naiveFTWithPhase")
+    getMeanTimeAndErrors({"algorithm" : ["naiveFTWithPhase"]}, "csvs/performanceTest.csv", True, [50,10000])
+    print()
+
+    print("cepstrum")
+    getMeanTimeAndErrors({"algorithm" : ["cepstrum"]}, "csvs/performanceTest.csv", True, [50,10000])
+    print()
+
+    print("HPS")
+    getMeanTimeAndErrors({"algorithm" : ["HPS"]}, "csvs/performanceTest.csv", True, [50,10000])
+    print()
+
+# printPerformanceTestAnalysisWithRanges()
+
+def printAlgorithmTestAnalysisWithRanges(csvFilePath, freqRanges):
+    print("zerocross")
+    for freqRange in freqRanges:
+        print("Range %sHz-%sHz" % (freqRange[0], freqRange[1]))
+        getMeanTimeAndErrors({"algorithm" : ["zerocross"]}, csvFilePath, True, freqRange)
+        print()
+
+    print("autocorrelation")
+    for freqRange in freqRanges:
+        print("Range %sHz-%sHz" % (freqRange[0], freqRange[1]))
+        getMeanTimeAndErrors({"algorithm" : ["autocorrelation"]}, csvFilePath, True, freqRange)
+        print()
+
+    print("AMDF")
+    for freqRange in freqRanges:
+        print("Range %sHz-%sHz" % (freqRange[0], freqRange[1]))
+        getMeanTimeAndErrors({"algorithm" : ["AMDF"]}, csvFilePath, True, freqRange)
+        print()
+
+    print("naiveFT")
+    for freqRange in freqRanges:
+        print("Range %sHz-%sHz" % (freqRange[0], freqRange[1]))
+        getMeanTimeAndErrors({"algorithm" : ["naiveFT"]}, csvFilePath, True, freqRange)
+        print()
+
+    print("naiveFTWithPhase")
+    for freqRange in freqRanges:
+        print("Range %sHz-%sHz" % (freqRange[0], freqRange[1]))
+        getMeanTimeAndErrors({"algorithm" : ["naiveFTWithPhase"]}, csvFilePath, True, freqRange)
+        print()
+
+    print("cepstrum")
+    for freqRange in freqRanges:
+        print("Range %sHz-%sHz" % (freqRange[0], freqRange[1]))
+        getMeanTimeAndErrors({"algorithm" : ["cepstrum"]}, csvFilePath, True, freqRange)
+        print()
+
+    print("HPS")
+    for freqRange in freqRanges:
+        print("Range %sHz-%sHz" % (freqRange[0], freqRange[1]))
+        getMeanTimeAndErrors({"algorithm" : ["HPS"]}, csvFilePath, True, freqRange)
+        print()
+
+    print("Median")
+    for freqRange in freqRanges:
+        print("Range %sHz-%sHz" % (freqRange[0], freqRange[1]))
+        getMeanTimeAndErrors({"algorithm" : ["median"]}, csvFilePath, True, freqRange)
+        print()
+
+    print("trimmedMean")
+    for freqRange in freqRanges:
+        print("Range %sHz-%sHz" % (freqRange[0], freqRange[1]))
+        getMeanTimeAndErrors({"algorithm" : ["trimmedMean"]}, csvFilePath, True, freqRange)
+        print()
+
+def algorithmRangesPerformaceAnalysis():
+    print("PERFORMANCE TEST ANALYSIS")
+    printAlgorithmTestAnalysisWithRanges("csvs/performanceTest.csv", [[20,20000], [50, 10000], [80,1500], [100,1000]])
+
+# algorithmRangesPerformaceAnalysis()
+
+def algorithmRangesStressAnalysis():
+    print("STRESS TEST ANALYSIS")
+    printAlgorithmTestAnalysisWithRanges("csvs/stressTest.csv", [[20,20000], [50, 10000], [80,1500], [100,1000]])
+
+# algorithmRangesStressAnalysis()
+
+def proportionErrorGraphsByHyperparam(csvFilePath, title, verbose, freqRange, algorithm, hyperparamName, hyperparamValues):
+    labels = hyperparamValues #ignoring the 'average' label for now
+    correctOctaveProportions = []
+    octaveErrorProportions = []
+    
+    for value in labels:
+        errors = getMeanTimeAndErrors({"algorithm" : [algorithm], hyperparamName : [value]}, csvFilePath, verbose, freqRange)
+        correctOctaveProportions.append(errors[3])
+        octaveErrorProportions.append(errors[4])
+
+
+    x = np.arange(len(labels))  # the label locations
+    width = 0.35  # the width of the bars
+
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(x - width/2, correctOctaveProportions, width, label='Correct Octave')
+    rects2 = ax.bar(x + width/2, octaveErrorProportions, width, label='+/- One Octave')
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('Proportion')
+    ax.set_title(title)
+    ax.set_xticks(x)
+    ax.set_xlabel(hyperparamName)
+    ax.set_xticklabels(labels)
+    ax.legend()
+
+    def autolabel(rects):
+        """Attach a text label above each bar in *rects*, displaying its height."""
+        for rect in rects:
+            height = rect.get_height()
+            ax.annotate('{0:.3f}'.format(height),
+                    xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 3),  # 3 points vertical offset
+                    textcoords="offset points",
+                    ha='center', va='bottom')
+
+    autolabel(rects1)
+    autolabel(rects2)
+
+    # ax.bar_label(rects1, padding=3)
+    # ax.bar_label(rects2, padding=3)
+
+    fig.tight_layout()
+
+    plt.show()
+
+def AMDFOptimisationGraphs():
+    proportionErrorGraphsByHyperparam("csvs/optimisationTest.csv", "Proportion of correct AMDF predictions (+/- 50 cents) in performanceTest.csv by 'b' value", False, [50,5000], "AMDF", "b", ["0.5","1","2"])
+
+# AMDFOptimisationGraphs()
+
+def HPSOptimisationGraphs():
+    proportionErrorGraphsByHyperparam("csvs/optimisationTest.csv", "Proportion of correct HPS predictions (+/- 50 cents) in performanceTest.csv by 'numDownsamples' value", False, [50,5000], "HPS", "numDownsamples", ["2","4","6"])
+
+# HPSOptimisationGraphs()
+
+def proportionErrorGraphsByAlgorithm(csvFilePath, title, verbose, freqRange):
+    labels = ["zerocross", "autocorrelation", "AMDF", "naiveFT", "naiveFTWithPhase", "cepstrum", "HPS", "median"]#, "trimmedMean"]
+    correctOctaveProportions = []
+    octaveErrorProportions = []
+    
+    for algorithm in labels:
+        errors = getMeanTimeAndErrors({"algorithm" : [algorithm]}, csvFilePath, verbose, freqRange)
+        correctOctaveProportions.append(errors[3])
+        octaveErrorProportions.append(errors[4])
+
+
+    x = np.arange(len(labels))  # the label locations
+    width = 0.35  # the width of the bars
+
+    fig, ax = plt.subplots()
+    rects1 = ax.bar(x - width/2, correctOctaveProportions, width, label='Correct Octave')
+    rects2 = ax.bar(x + width/2, octaveErrorProportions, width, label='+/- One Octave')
+
+    # Add some text for labels, title and custom x-axis tick labels, etc.
+    ax.set_ylabel('Proportion')
+    ax.set_title(title)
+    ax.set_xticks(x)
+    ax.set_xticklabels(labels)
+    ax.legend()
+
+    def autolabel(rects):
+        """Attach a text label above each bar in *rects*, displaying its height."""
+        for rect in rects:
+            height = rect.get_height()
+            ax.annotate('{0:.3f}'.format(height),
+                    xy=(rect.get_x() + rect.get_width() / 2, height),
+                    xytext=(0, 3),  # 3 points vertical offset
+                    textcoords="offset points",
+                    ha='center', va='bottom')
+
+    autolabel(rects1)
+    autolabel(rects2)
+
+    # ax.bar_label(rects1, padding=3)
+    # ax.bar_label(rects2, padding=3)
+
+    fig.tight_layout()
+
+    plt.show()
+
+def performanceTestGraphs():
+    proportionErrorGraphsByAlgorithm("csvs/performanceTest.csv", 'Proportion of correct predictions (+/- 50 cents) in performanceTest.csv', False, [50,5000])
+
+# performanceTestGraphs()
+
+def stressTestGraphs():
+    proportionErrorGraphsByAlgorithm("csvs/stressTest.csv", 'Proportion of correct predictions (+/- 50 cents) in stressTest.csv', False, [50,5000])
+
+# stressTestGraphs()
+
+
+def getMinMaxTestFreqs():
+    for test in ("optimisationTest", "performanceTest", "stressTest"):
+        minFreq = float("inf")
+        maxFreq = -float("inf")
+        trueFreqIndex = 13
+        with open("csvs/%s.csv" % (test), "r") as f:
+            line = f.readline() #skip past header line
+            while line:
+                line = f.readline().strip().replace(" ","").split(",")
+                if line == [""]:
+                    break
+                trueFreq = float(line[trueFreqIndex])
+                if trueFreq < minFreq:
+                    minFreq = trueFreq
+                if trueFreq > maxFreq:
+                    maxFreq = trueFreq
+        
+        print("%s\nMin Freq: %s Hz\nMax Freq: %s Hz" % (test, minFreq, maxFreq))
+
+getMinMaxTestFreqs()
 
 ## For use with old csv format (i.e. generatedSignalsTest.csv and wavTests.csv)
 # separate results based firstly by algorithm and secondly by type of wave

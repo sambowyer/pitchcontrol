@@ -1,4 +1,4 @@
-from helpers import *
+from helpers import toMono, proportionClipping, multiplyGain, multiplyGainUntilClipping, resample, getMidiNoteWithCents, getMedian, getHanningWindow
 import math, cmath
 import numpy as np 
 import soundfile as sf
@@ -67,9 +67,13 @@ def phaseVocoderStretch(signal, sampleRate, scalingFactor, windowLength, overlap
 
     return newSignal
 
-def phaseVocoderPitchShift(signal, sampleRate, scalingFactor, windowLength=2048, overlapLength=1536, windowFunction=None):
+def phaseVocoderPitchShift(signal, sampleRate, scalingFactor, windowLength=2048, overlapLength=1536, windowFunction=None, forceConstantLength=False):
     newSignal = phaseVocoderStretch(signal, sampleRate, scalingFactor, windowLength, overlapLength, windowFunction)
-    return resample(newSignal, sampleRate, sampleRate/scalingFactor)
+    newSignal = resample(newSignal, sampleRate, sampleRate/scalingFactor)
+    if forceConstantLength:
+        return phaseVocoderStretch(newSignal, sampleRate, len(signal)/len(newSignal), windowLength, overlapLength, windowFunction)
+    else:
+        return newSignal
 
 def compressIndexedPitchData(indexedPitchData):
     sectionStartPitch = indexedPitchData[0][2]
@@ -164,7 +168,7 @@ def matchPitch(originalPitchProfile, matchingPitchProfile):
     removeShortSections(originalIndexedPitchData, 3*originalPitchProfile.blockSize//2 + 1)
     removeShortSections(matchingIndexedPitchData, 3*matchingPitchProfile.blockSize//2 + 1)
 
-    print(originalIndexedPitchData, matchingIndexedPitchData)
+    # print(originalIndexedPitchData, matchingIndexedPitchData)
 
     newSignal = []
     isMono = sf.info(originalPitchProfile.location).channels == 1
@@ -199,14 +203,14 @@ def matchPitch(originalPitchProfile, matchingPitchProfile):
                 intersectionEndIndex = originalIndexedPitchData[originalSectionCount][1]
                 originalSectionCount += 1
                 matchingSectionCount += 1
-            print("o:%s/%s  m:%s/%s" % (originalSectionCount, len(originalIndexedPitchData), matchingSectionCount, len(matchingIndexedPitchData)))
+            # print("o:%s/%s  m:%s/%s" % (originalSectionCount, len(originalIndexedPitchData), matchingSectionCount, len(matchingIndexedPitchData)))
             partialSignal, sampleRate = sf.read(originalPitchProfile.location, start=intersectionStartIndex, stop=intersectionEndIndex)
             
             if isMono == False:
                 partialSignal = toMono(partialSignal)
             
-            shiftedIntersection = phaseVocoderPitchShift(partialSignal, sampleRate, scalingFactor, windowLength=analysisWindowLength, overlapLength=overlap, windowFunction=getHanningWindow(analysisWindowLength))
-            print(len(shiftedIntersection), len(partialSignal), intersectionEndIndex-intersectionStartIndex)
+            shiftedIntersection = phaseVocoderPitchShift(partialSignal, sampleRate, scalingFactor, windowLength=analysisWindowLength, overlapLength=overlap, windowFunction=getHanningWindow(analysisWindowLength), forceConstantLength=True)
+            # print(len(shiftedIntersection), len(partialSignal), intersectionEndIndex-intersectionStartIndex)
             newSignal += shiftedIntersection
 
             intersectionStartIndex = intersectionEndIndex

@@ -1,6 +1,6 @@
 import sys, getopt, math, logging, argparse
 from predict import zerocross, autocorrelation, AMDF, naiveFT, naiveFTWithPhase, cepstrum, HPS
-from helpers import *
+from helpers import getPitchInfo, getMedian, getTrimmedMean, getHanningWindow, toMono
 import pitchShift
 from PitchProfile import PitchProfile
 import numpy as np
@@ -51,12 +51,12 @@ def detectPitch(file):
     end = timer()
     predictions.append(pred)
     executionTimes.append(end-start)
-    print("zerocross:        %s     (took %ss)" % (getPitchInfo(pred), end-start))
+    print("zerocross:        %s     (took %ss)" % (getPitchInfo(pred, True), end-start))
 
     
-    if len(signal) > 2048:
+    if len(signal) > 1024:
         start = timer()
-        pred = autocorrelation(signal[:2048], sampleRate)
+        pred = autocorrelation(signal[:1024], sampleRate)
         end = timer()
     else:
         start = timer()
@@ -64,11 +64,11 @@ def detectPitch(file):
         end = timer()
     predictions.append(pred)
     executionTimes.append(end-start)
-    print("autocorrelation:  %s     (took %ss)" % (getPitchInfo(pred), end-start))
+    print("autocorrelation:  %s    (took %ss)" % (getPitchInfo(pred, True), end-start))
 
-    if len(signal) > 2048:
+    if len(signal) > 1024:
         start = timer()
-        pred = AMDF(signal[:2048], sampleRate)
+        pred = AMDF(signal[:1024], sampleRate)
         end = timer()
     else:
         start = timer()
@@ -76,45 +76,46 @@ def detectPitch(file):
         end = timer()
     predictions.append(pred)
     executionTimes.append(end-start)
-    print("AMDF:             %s     (took %ss)" % (getPitchInfo(pred), end-start))
+    print("AMDF:             %s     (took %ss)" % (getPitchInfo(pred, True), end-start))
 
     start = timer()
     pred = naiveFT(signal, sampleRate, True)
     end = timer()
     predictions.append(pred)
     executionTimes.append(end-start)
-    print("naiveFT:          %s     (took %ss)" % (getPitchInfo(pred), end-start))
+    print("naiveFT:          %s     (took %ss)" % (getPitchInfo(pred, True), end-start))
 
     start = timer()
     pred = naiveFTWithPhase(signal, sampleRate, True)
     end = timer()
     predictions.append(pred)
     executionTimes.append(end-start)
-    print("naiveFTWithPhase: %s     (took %ss)" % (getPitchInfo(pred), end-start))
+    print("naiveFTWithPhase: %s     (took %ss)" % (getPitchInfo(pred, True), end-start))
 
     start = timer()
     pred = cepstrum(signal, sampleRate, True)
     end = timer()
     predictions.append(pred)
     executionTimes.append(end-start)
-    print("cepstrum:        %s     (took %ss)" % (getPitchInfo(pred), end-start))
+    print("cepstrum:         %s     (took %ss)" % (getPitchInfo(pred, True), end-start))
 
     start = timer()
     pred = HPS(signal, sampleRate, True, 2)
     end = timer()
     predictions.append(pred)
     executionTimes.append(end-start)
-    print("HPS:              %s     (took %ss)" % (getPitchInfo(pred), end-start))
+    print("HPS:              %s     (took %ss)" % (getPitchInfo(pred, True), end-start))
 
     
-    print("median:           %s     (took %ss)" % (getPitchInfo(getMedian(predictions)), sum(executionTimes)))
+    print("median:           %s     (took %ss)" % (getPitchInfo(getMedian(predictions), True), sum(executionTimes)))
 
-    print("mean of middle 3: %s     (took %ss)" % (getPitchInfo(getTrimmedMean(predictions, 2/7)), sum(executionTimes)))
+    print("mean of middle 3: %s     (took %ss)" % (getPitchInfo(getTrimmedMean(predictions, 2/7), True), sum(executionTimes)))
 
 def correctPitch(inputFile, outputFile):
     sampleRate = sf.info(inputFile).samplerate
-    pp = PitchProfile(inputFile, sampleRate, "naiveFTWithPhase", {"isCustomFFT" : True}, blockSize=8192, overlap=0)
+    pp = PitchProfile(inputFile, sampleRate, "naiveFT", {"isCustomFFT" : True}, blockSize=4096, overlap=0)
     pp.analysePitch()
+    # pp.printLog()
     newSignal = pitchShift.correctPitch(pp)
     sf.write(outputFile, newSignal, sampleRate)
 
@@ -127,8 +128,12 @@ def matchPitch(inputFile, matchingFile, outputFile):
 
     pp1 = PitchProfile(inputFile, sampleRateIn, "naiveFTWithPhase", {"isCustomFFT" : True}, blockSize=8192, overlap=0)
     pp1.analysePitch()
+    # print(pp1.pitchData)
+    # pp1.printLog()
     pp2 = PitchProfile(matchingFile, sampleRateIn, "naiveFTWithPhase", {"isCustomFFT" : True}, blockSize=8192, overlap=0)
     pp2.analysePitch()
+    # print(pp2.pitchData)
+    # pp2.printLog()
 
     newSignal = pitchShift.matchPitch(pp1, pp2)
     sf.write(outputFile, newSignal, sampleRateIn)
