@@ -98,8 +98,8 @@ class PitchProfile:
                 closestCorrectValue = correctNotes[0]
                 midiError = abs(closestCorrectValue-midiValue)
                 for note in correctNotes[1:]:
-                    if abs(closestCorrectValue-midiValue) < midiError:
-                        midiError = abs(closestCorrectValue-midiValue)
+                    if abs(note-midiValue) < midiError:
+                        midiError = abs(note-midiValue)
                         closestCorrectValue = note
 
                 self.pitchData[i] = midiToFreq(closestCorrectValue)

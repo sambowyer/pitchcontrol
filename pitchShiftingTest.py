@@ -250,7 +250,7 @@ def quickTestRun():
 #   Strange behaviour that warrants more investigation but for now the tests can continue.
 #   And hence why the first argument of the ratioTest call is 66 not 125
 def mainTest():
-    ratioTest(66, 125, "csvs/ratioTest.csv", "testRecords/ratioTestRecord.txt")
+    # ratioTest(66, 125, "csvs/ratioTest.csv", "testRecords/ratioTestRecord.txt")
 
     correctingTest(252, "csvs/correctingTest.csv", "testRecords/correctingTestRecord.txt")
 

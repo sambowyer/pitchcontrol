@@ -868,14 +868,14 @@ def majorScalesTest():
     for tonic in ("C", "D#", "E", "F"):
         scale = getMajorScale(tonic)
         scaleNoteNames = [getNoteName(midiToFreq(x)) for x in scale]
-        print(tonic, scaleNoteNames)
+        print(tonic, scale, scaleNoteNames)
 
     for tonic in ("C", "D#", "E", "G"):
         scale = getMajorPentatonicScale(tonic)
         scaleNoteNames = [getNoteName(midiToFreq(x)) for x in scale]
-        print(tonic, scaleNoteNames)
+        print(tonic, scale, scaleNoteNames)
 
-# majorScalesTest()
+majorScalesTest()
 
 # printPitchInfo(440)
 
