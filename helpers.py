@@ -40,9 +40,28 @@ def getPitchInfo(freq, round=False):
     else:
         return "%sHz - %s - %scents" % (freq, noteName, cents*-1)
 
-
 def printPitchInfo(freq, round=False):
     print(getPitchInfo(freq, round))
+
+def getScale(tonic, intervals):
+    '''returns a list of all midi note numbers from 12 (C0) to 120 (C9) which are members of the desired scale (defined by its consecutive intervals)'''
+    noteNum = ("C","C#","D","D#","E","F","F#","G","G#","A","A#","B").index(tonic) + 12
+    scale = []
+    i = 0
+    while noteNum <= 120:
+        scale.append(noteNum)
+        noteNum += intervals[i]
+        i = (i+1) % len(intervals)
+
+    return scale
+
+def getMajorScale(tonic):
+    '''returns a list of all midi note numbers from 12 (C0) to 120 (C9) which are members of the desired major key'''
+    return getScale(tonic, [2,2,1,2,2,2,1])
+
+def getMajorPentatonicScale(tonic):
+    '''returns a list of all midi note numbers from 12 (C0) to 120 (C9) which are members of the desired major pentatonic'''
+    return getScale(tonic, [2,2,3,2,3])
 
 
 ## signal-based helpers
@@ -187,17 +206,36 @@ def getMedian(data):
 
 # (0)
 def getPercentageError(expectedFreq, actualFreq):
+    if expectedFreq == 0 and actualFreq == 0:
+        return 0
+    if expectedFreq == 0 or actualFreq == 0:
+        return float("inf")
     return (abs(expectedFreq-actualFreq))/expectedFreq
 
 #(1)
 def getAbsoluteMIDIError(expectedFreq, actualFreq):
-    return abs(getMidiNoteWithCents(expectedFreq) - getMidiNoteWithCents(actualFreq))
+    if expectedFreq == 0 and actualFreq == 0:
+        return 0
+    if expectedFreq == 0 or actualFreq == 0:
+        return 128 #total range of midi notes - if this happens then something has gone wrong
+    else:
+        return abs(getMidiNoteWithCents(expectedFreq) - getMidiNoteWithCents(actualFreq))
 
 #(2)
 def isWithin100Cents(expectedFreq, actualFreq):
-    return int(abs(getMidiNoteWithCents(expectedFreq) - getMidiNoteWithCents(actualFreq)) <= 0.5)
+    if expectedFreq == 0 and actualFreq == 0:
+        return 1
+    elif expectedFreq == 0 or actualFreq == 0:
+        return 0
+    else:
+        return int(abs(getMidiNoteWithCents(expectedFreq) - getMidiNoteWithCents(actualFreq)) <= 0.5)
 
 #(3)
 def isWithin100CentsWithOctaveError(expectedFreq, actualFreq):
-    diff = abs(getMidiNoteWithCents(expectedFreq) - getMidiNoteWithCents(actualFreq))
-    return int(diff <= 0.5 or (diff <= 12.5 and diff >= 11.5))
+    if expectedFreq == 0 and actualFreq == 0:
+        return 1
+    elif expectedFreq == 0 or actualFreq == 0:
+        return 0
+    else:
+        diff = abs(getMidiNoteWithCents(expectedFreq) - getMidiNoteWithCents(actualFreq))
+        return int(diff <= 0.5 or (diff <= 12.5 and diff >= 11.5))

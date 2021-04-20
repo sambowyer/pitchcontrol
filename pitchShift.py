@@ -218,8 +218,8 @@ def matchPitch(originalPitchProfile, matchingPitchProfile):
     
     return newSignal
 
-def correctPitch(originalPitchProfile):
+def correctPitch(originalPitchProfile, correctNotes=None):
     correctedPitchProfile = deepcopy(originalPitchProfile)
-    correctedPitchProfile.autoCorrectPitchData()
+    correctedPitchProfile.autoCorrectPitchData(correctNotes)
 
     return matchPitch(originalPitchProfile, correctedPitchProfile)

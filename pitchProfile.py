@@ -85,9 +85,24 @@ class PitchProfile:
                 pitchPrediction = pitch prediction (in Hz) for this block'''
         return [[i*(self.blockSize-self.overlap), i*(self.blockSize-self.overlap)+self.blockSize, self.pitchData[i]] for i in range(len(self.pitchData))]
 
-    def autoCorrectPitchData(self):
-        for i in range(len(self.pitchData)):
-            self.pitchData[i] = midiToFreq(round(getMidiNoteWithCents(self.pitchData[i])))
+    def autoCorrectPitchData(self, correctNotes=None):
+        '''If correctNotes=None this corrects the frequency values in self.pitchData to be exactly in tune (by the A440 equal temperament tuning standard).
+        If instead correctNotes is an array of the midi values that are 'acceptable' then the frequency values in self.pitchData are tweaked so that they are equal to the frequency of the 'acceptable' midi note that each original pitchData frequency is clsoest to.'''
+        if correctNotes == None:
+            for i in range(len(self.pitchData)):
+                self.pitchData[i] = midiToFreq(round(getMidiNoteWithCents(self.pitchData[i])))
+        else:
+            for i in range(len(self.pitchData)):
+                midiValue = getMidiNoteWithCents(self.pitchData[i])
+
+                closestCorrectValue = correctNotes[0]
+                midiError = abs(closestCorrectValue-midiValue)
+                for note in correctNotes[1:]:
+                    if abs(closestCorrectValue-midiValue) < midiError:
+                        midiError = abs(closestCorrectValue-midiValue)
+                        closestCorrectValue = note
+
+                self.pitchData[i] = midiToFreq(closestCorrectValue)
 
     def predictPitch(self, partialSignal):
         if self.detectionMode == "zerocross":

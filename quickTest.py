@@ -1,4 +1,4 @@
-from predict import zerocross, autocorrelation, AMDF, naiveFT, cepstrum, HPS, naiveFTWithPhase
+from predict import zerocross, autocorrelation, AMDF, naiveFT, cepstrum, HPS, naiveFTWithPhase, getTrimmedMean
 import signalGenerator
 from PitchProfile import PitchProfile
 from pitchShift import phaseVocoderPitchShift, phaseVocoderStretch, matchPitch, correctPitch
@@ -34,7 +34,7 @@ def testAllAlgorithmsToCSV(signal, sampleRate, signalType, trueFreq, csvFilePath
 
         #zerocross
         start = timer()
-        pred = predict.zerocross(signal, sampleRate)
+        pred = zerocross(signal, sampleRate)
         end = timer()
 
         predictions.append(pred)
@@ -44,7 +44,7 @@ def testAllAlgorithmsToCSV(signal, sampleRate, signalType, trueFreq, csvFilePath
 
         #autocorrelation
         start = timer()
-        pred = predict.autocorrelation(signal, sampleRate)
+        pred = autocorrelation(signal, sampleRate)
         end = timer()
 
         predictions.append(pred)
@@ -55,7 +55,7 @@ def testAllAlgorithmsToCSV(signal, sampleRate, signalType, trueFreq, csvFilePath
 
         #AMDF
         start = timer()
-        pred = predict.AMDF(signal, sampleRate, params["b"])
+        pred = AMDF(signal, sampleRate, params["b"])
         end = timer()
 
         predictions.append(pred)
@@ -65,7 +65,7 @@ def testAllAlgorithmsToCSV(signal, sampleRate, signalType, trueFreq, csvFilePath
 
         #naiveFT
         start = timer()
-        pred = predict.naiveFT(signal, sampleRate, params["isCustomFFT"])
+        pred = naiveFT(signal, sampleRate, params["isCustomFFT"])
         end = timer()
 
         predictions.append(pred)
@@ -75,7 +75,7 @@ def testAllAlgorithmsToCSV(signal, sampleRate, signalType, trueFreq, csvFilePath
 
         #cepstrum
         start = timer()
-        pred = predict.cepstrum(signal, sampleRate, params["isCustomFFT"])
+        pred = cepstrum(signal, sampleRate, params["isCustomFFT"])
         end = timer()
 
         predictions.append(pred)
@@ -85,7 +85,7 @@ def testAllAlgorithmsToCSV(signal, sampleRate, signalType, trueFreq, csvFilePath
 
         #HPS
         start = timer()
-        pred = predict.HPS(signal, sampleRate, params["isCustomFFT"], params["numDownsamples"])
+        pred = HPS(signal, sampleRate, params["isCustomFFT"], params["numDownsamples"])
         end = timer()
 
         predictions.append(pred)
@@ -94,13 +94,13 @@ def testAllAlgorithmsToCSV(signal, sampleRate, signalType, trueFreq, csvFilePath
         f.write("%s,%s,%s,%s,%s,%s,%s\n" % (signalType, sampleRate, "HPS", "isCustomFFT=" + str(params["isCustomFFT"]) + "&numDownsamples=" + str(params["numDownsamples"]), trueFreq, pred, end-start))
 
         #average - exclude min and max
-        pred = predict.getTrimmedMean(predictions, 1/3)
+        pred = getTrimmedMean(predictions, 1/3)
         time = sum(executionTimes)
 
         f.write("%s,%s,%s,%s,%s,%s,%s\n" % (signalType, sampleRate, "average", "b=" + str(params["b"]) + "&isCustomFFT=" + str(params["isCustomFFT"]) + "&numDownsamples=" + str(params["numDownsamples"]), trueFreq, pred, time))
 
         #median (exclude 1st and 2nd mins/maxs)
-        pred = predict.getTrimmedMean(predictions, 2/3)
+        pred = getTrimmedMean(predictions, 2/3)
         time = sum(executionTimes)
 
         f.write("%s,%s,%s,%s,%s,%s,%s\n" % (signalType, sampleRate, "median", "b=" + str(params["b"]) + "&isCustomFFT=" + str(params["isCustomFFT"]) + "&numDownsamples=" + str(params["numDownsamples"]), trueFreq, pred, time))
@@ -826,42 +826,56 @@ def pitchMatchingTest2():
         matched = matchPitch(pp2,pp1)
         sf.write("wavs/pitchShiftingTests/sineTrumpetMatched%s.wav" % (windowLength), matched, sampleRate)
 
-
 def pickleAllPVTestMelodies():
+    for blockSize in (4096, 8192):
     ## First the generated signal melodies
-    for melodyCount in range(20):
-        pp = PitchProfile("/wavs/generatedSignalMelodies/generatedSignalMelody%s.wav" % (melodyCount), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, overlap=0)
-        pp.analysePitch()
-        pickle.dump(pp, open("/wavs/generatedSignalMelodies/generatedSignalMelody%s.p" % (melodyCount), "wb"))
-
-    # And the generated signal canvases
-    for signalType in ("sine", "saw", "square", "triangle", "sineWithHarmonics(20)"):
-        pp = PitchProfile("/wavs/generatedSignalMelodies/%sCanvas.wav" % (signalType), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, overlap=0)
-        pp.analysePitch()
-        pickle.dump(pp, open("/wavs/generatedSignalMelodies/%sCanvas.p" % (signalType), "wb"))
-
-
-    ## Now the instrument melodies
-    for instrument in ("BBCCello", "BBCViolin", "BBCFlute", "BBCTrumpet", "LABSPiano", "CleanGuitar", "OverdriveGuitar"):
-        for melodyCount in range(1,11):
-            # Pickle main (in-tune) melody file
-            pp = PitchProfile("/wavs/instrumentMelodies/%s/%sMelody%s.wav" % (instrument, instrument, melodyCount), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, overlap=0)
+        for melodyCount in range(20):
+            pp = PitchProfile("wavs/generatedSignalMelodies/generatedSignalMelody%s.wav" % (melodyCount), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, blockSize=blockSize, overlap=0)
             pp.analysePitch()
-            pickle.dump(pp, open("/wavs/instrumentMelodies/%s/%sMelody%s.p" % (instrument, instrument, melodyCount), "wb"))
+            pickle.dump(pp, open("wavs/generatedSignalMelodies/generatedSignalMelody%s-%s.p" % (melodyCount, blockSize), "wb"))
+            print("Done generatedSignalMelody%s-%s." % (melodyCount, blockSize))
 
-            # Pickle detuned melody file
-            pp = PitchProfile("/wavs/instrumentMelodies/Detuned/%s/%sMelody%sDETUNED.wav" % (instrument, instrument, melodyCount), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, overlap=0)
+        # And the generated signal canvases
+        for signalType in ("sine", "saw", "square", "triangle", "sineWithHarmonics(20)"):
+            pp = PitchProfile("wavs/generatedSignalMelodies/%sCanvas.wav" % (signalType), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, blockSize=blockSize, overlap=0)
             pp.analysePitch()
-            pickle.dump(pp, open("/wavs/instrumentMelodies/Detuned/%s/%sMelody%sDETUNED.p" % (instrument, instrument, melodyCount), "wb"))
+            pickle.dump(pp, open("wavs/generatedSignalMelodies/%sCanvas-%s.p" % (signalType, blockSize), "wb"))
+            print("Done %sCanvas-%s." % (signalType, blockSize))
 
-        # And the instrument canvases
-        pp = PitchProfile("/wavs/instrumentMelodies/%s/%sCanvas.wav" % (instrument, instrument), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, overlap=0)
-        pp.analysePitch()
-        pickle.dump(pp, open("/wavs/instrumentMelodies/%s/%sCanvas.p" % (instrument, instrument), "wb"))
+        ## Now the instrument melodies
+        instrumentNames = {"BBCCello" : "cello", "BBCViolin" : "violin", "BBCFlute" : "flute", "BBCTrumpet" : "trumpet", "LABSPiano" : "piano", "CleanGuitar" : "guitar", "OverdriveGuitar" : "guitar"}
+        for instrument in instrumentNames:
+            for melodyCount in range(1,11):
+                # Pickle main (in-tune) melody file
+                pp = PitchProfile("wavs/instrumentMelodies/%s/%sMelody%s.wav" % (instrument, instrument, melodyCount), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, instrument=instrumentNames[instrument], blockSize = blockSize, overlap=0)
+                pp.analysePitch()
+                pickle.dump(pp, open("wavs/instrumentMelodies/%s/%sMelody%s-%s.p" % (instrument, instrument, melodyCount, blockSize), "wb"))
+                print("Done %sMelody%s-%s." % (instrument, melodyCount, blockSize))
 
-pitchMatchingTest2()
+                # Pickle detuned melody file
+                pp = PitchProfile("wavs/instrumentMelodies/Detuned/%s/%sMelody%sDETUNED.wav" % (instrument, instrument, melodyCount), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, instrument=instrumentNames[instrument], blockSize = blockSize, overlap=0)
+                pp.analysePitch()
+                pickle.dump(pp, open("wavs/instrumentMelodies/Detuned/%s/%sMelody%sDETUNED-%s.p" % (instrument, instrument, melodyCount, blockSize), "wb"))
+                print("Done %sMelody%sDETUNED-%s." % (instrument, melodyCount, blockSize))
 
-# pickleAllPVTestMelodies()
+            # And the instrument canvases
+            pp = PitchProfile("wavs/instrumentMelodies/%s/%sCanvas.wav" % (instrument, instrument), 44100, "naiveFTWithPhase", {"isCustomFFT" : True}, instrument=instrumentNames[instrument], blockSize = blockSize, overlap=0)
+            pp.analysePitch()
+            pickle.dump(pp, open("wavs/instrumentMelodies/%s/%sCanvas-%s.p" % (instrument, instrument, blockSize), "wb"))
+            print("Done %sCanvas-%s." % (instrument, blockSize))
+
+def majorScalesTest():
+    for tonic in ("C", "D#", "E", "F"):
+        scale = getMajorScale(tonic)
+        scaleNoteNames = [getNoteName(midiToFreq(x)) for x in scale]
+        print(tonic, scaleNoteNames)
+
+    for tonic in ("C", "D#", "E", "G"):
+        scale = getMajorPentatonicScale(tonic)
+        scaleNoteNames = [getNoteName(midiToFreq(x)) for x in scale]
+        print(tonic, scaleNoteNames)
+
+# majorScalesTest()
 
 # printPitchInfo(440)
 

@@ -1,6 +1,7 @@
 __pychache__/
 wavs/
 *.wav
+*.p
 csvs/
 *.csv
 MIDI/
@@ -8,6 +9,7 @@ MIDI/
 logs/
 *.log
 testRecords/
+demo/
 *.pyc
 *.RPP
 *.RPP-bak

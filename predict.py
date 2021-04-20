@@ -107,8 +107,18 @@ def naiveFT(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000):
     Predicts the frequency of a mono signal simply by picking the largest peak in the  Fourier-transform of the signal.'''
 
     freq_vector = np.fft.rfftfreq(len(signal), d=1/sampleRate)
-    minExpectedBin = min(np.where(freq_vector >= expectedMin)[0])
-    maxExpectedBin = max(np.where(freq_vector <= expectedMax)[0])
+    
+    expectedBins = np.where(freq_vector >= expectedMin)[0]
+    if expectedBins == []:
+        minExpectedBin = 1
+    else:
+        minExpectedBin = min(expectedBins)
+
+    expectedBins = np.where(freq_vector <= expectedMax)[0]
+    if expectedBins == []:
+        maxExpectedBin = len(freq_vector)
+    else:
+        maxExpectedBin = max(expectedBins)
 
     mags = np.abs(fft(signal, isCustomFFT))
 
@@ -121,12 +131,6 @@ def naiveFT(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000):
 
     return freq_vector[maxMagBin]
 
-    # freq_vector = np.fft.rfftfreq(len(signal), d=1/sampleRate)
-    # mags = np.abs(fft(signal, isCustomFFT))
-    # maxLog = max(mags)
-    # print(np.where(mags == maxLog)[0])
-    # return freq_vector[np.where(mags == maxLog)][0]
-
 def naiveFTWithPhase(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000):
     '''Another Naive Fourier Transform approach where phase information is used to tweak the predition.
     Compute two overlapping fourier transforms and initially just choose the bin with the largest magnitude (in the second FT frame) - exactly the same as naiveFT.
@@ -136,8 +140,18 @@ def naiveFTWithPhase(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMa
     windowLength = 2**(math.floor(math.log2(len(signal)*0.8)))
     # print(windowLength)
     freq_vector = np.fft.rfftfreq(windowLength, d=1/sampleRate)
-    minExpectedBin = min(np.where(freq_vector >= expectedMin)[0])
-    maxExpectedBin = max(np.where(freq_vector <= expectedMax)[0])
+
+    expectedBins = np.where(freq_vector >= expectedMin)[0]
+    if expectedBins == []:
+        minExpectedBin = 1
+    else:
+        minExpectedBin = min(expectedBins)
+
+    expectedBins = np.where(freq_vector <= expectedMax)[0]
+    if expectedBins == []:
+        maxExpectedBin = len(freq_vector)
+    else:
+        maxExpectedBin = max(expectedBins)
 
     #Then get our two FT frames
     bins1 = fft(signal[:windowLength], isCustomFFT)

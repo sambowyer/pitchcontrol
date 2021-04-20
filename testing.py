@@ -1,7 +1,9 @@
-import predict
+import predict, pitchShift
 from helpers import *
+from PitchProfile import PitchProfile
 from timeit import default_timer as timer
 import soundfile as sf
+from copy import deepcopy
 
 def dictionaryToCSVLine(dictionary, algorithm, b, isCustomFFT, numDownsamples, octaveTrick, predFreq, time):
     d = dictionary.copy()
@@ -152,74 +154,93 @@ def getPitchDataMeanErrors(expectedPitchData, actualPitchData):
 
     return [x/numDataPoints for x in meanErrors]
 
-def ratioTestToCSV(signal, signalLocation, testInfo, csvFilePath):
+def ratioTestToCSV(originalPitchProfile, scalingFactor, csvFilePath, verbose=False, saveFile=None):
     '''This function assumes that the csv file already contains headers: 
-        signalType, expectedMin, expectedMax, instrument, ratio, time, meanPercentErr, meanAbsMidiErr, meanCorrectNote, meanCorrectNoteWithOctaveErr
-    ALSO assumes that *testInfo* is a dictionary with these headers as it's keys and the values being the corresponding values.'''
-    originalPitchProfile = PitchProfile(signalLocation, testInfo["sampleRate"], "naiveFTWithPhase", {"isCustomFFT" : False}, testInfo["instrument"], blockSize=2048, overlap=1024, customName=testInfo["signalType"])
-    originalPitchProfile.writeLog(signalLocation[:-4] + ".log")
+        signalType, sampleRate, expectedMin, expectedMax, instrument, blockSize, scalingFactor, time, meanPercentErr, meanAbsMidiErr, meanCorrectNote, meanCorrectNoteWithOctaveErr'''
+    signal, sampleRate = sf.read(originalPitchProfile.location, always_2d=True)
+    signal = toMono(signal)
 
     start = timer()
-    shiftedSignal = phaseVocoderPitchShift(signal, testInfo["sampleRate"], testInfo["scalingFactor"], windowLength=512, overlapLength=384, getHanningWindow(512))
+    shiftedSignal = pitchShift.phaseVocoderPitchShift(signal, sampleRate, scalingFactor, windowLength=originalPitchProfile.blockSize//2, overlapLength=3*originalPitchProfile.blockSize//8, windowFunction=getHanningWindow(originalPitchProfile.blockSize//2))
     end = timer()
 
-    sf.write(signalLocation[:-4] + "SHIFTED.wav", shiftedSignal)
+    sf.write("temp.wav", shiftedSignal, sampleRate)
 
-    shiftedPitchProfile = PitchProfile(signalLocation[:-4] + "SHIFTED.wav", testInfo["sampleRate"], "naiveFTWithPhase", {"isCustomFFT" : False}, testInfo["instrument"], blockSize=2048, overlap=1024, customName=testInfo["signalType"]+"SHIFTED")
-    shiftedPitchProfile.writeLog(signalLocation[:-4] + "SHIFTED.log")
+    if saveFile != None:
+        sf.write(saveFile, shiftedSignal, sampleRate)
 
-    expectedPitchData = [x*float(testInfor["scalingFactor"]) for x in originalPitchProfile.pitchData]
+    shiftedPitchProfile = PitchProfile("temp.wav", sampleRate, "naiveFTWithPhase", {"isCustomFFT" : False}, originalPitchProfile.instrument, blockSize=originalPitchProfile.blockSize, overlap=originalPitchProfile.overlap, customName=originalPitchProfile.name+"SHIFTED")
+    shiftedPitchProfile.analysePitch()
+    
+    if verbose:
+        originalPitchProfile.printLog()
+        shiftedPitchProfile.printLog()
+
+    expectedPitchData = [x*scalingFactor for x in originalPitchProfile.pitchData]
 
     pitchDataMeanErrors = getPitchDataMeanErrors(expectedPitchData, shiftedPitchProfile.pitchData)
 
     with open(csvFilePath, "a") as f:
-        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (testInfo["signalType"], testInfo["sampleRate"], testInfo["expectedMin"], testInfo["expectedMax"], testInfo["instrument"], testInfo["sclaingFactor"], end-start, pitchDataMeanErrors[0], pitchDataMeanErrors[1], pitchDataMeanErrors[2], pitchDataMeanErrors[3]))
+        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (originalPitchProfile.name, sampleRate, originalPitchProfile.detectionParams["expectedMin"], originalPitchProfile.detectionParams["expectedMax"], originalPitchProfile.instrument, originalPitchProfile.blockSize, scalingFactor, end-start, pitchDataMeanErrors[0], pitchDataMeanErrors[1], pitchDataMeanErrors[2], pitchDataMeanErrors[3]))
 
 
-def correctingTestToCSV(signal, signalLocation, testInfo, csvFilePath):
+def correctingTestToCSV(originalPitchProfile, correctNotes, correctingTo, csvFilePath, verbose=False, saveFile=None):
     '''This function assumes that the csv file already contains headers: 
-        signalType, expectedMin, expectedMax, instrument, correctingTo, time, meanPercentErr, meanAbsMidiErr, meanCorrectNote, meanCorrectNoteWithOctaveErr
-    ALSO assumes that *testInfo* is a dictionary with these headers as it's keys and the values being the corresponding values.'''
-    originalPitchProfile = PitchProfile(signalLocation, testInfo["sampleRate"], "naiveFTWithPhase", {"isCustomFFT" : False}, testInfo["instrument"], blockSize=2048, overlap=1024, customName=testInfo["signalType"])
-    originalPitchProfile.writeLog(signalLocation[:-4] + ".log")
+        signalType, sampleRate, expectedMin, expectedMax, instrument, blockSize, correctingTo, time, meanPercentErr, meanAbsMidiErr, meanCorrectNote, meanCorrectNoteWithOctaveErr'''
+    sampleRate = originalPitchProfile.sampleRate
 
     start = timer()
-    correctedSignal = correctPitch(originalPitchProfile)
+    shiftedSignal = pitchShift.correctPitch(originalPitchProfile, correctNotes)
     end = timer()
 
-    sf.write(signalLocation[:-4] + "CORRECTED.wav", correctedSignal)
+    sf.write("temp.wav", shiftedSignal, sampleRate)
 
-    shiftedPitchProfile = PitchProfile(signalLocation[:-4] + "CORRECTED.wav", testInfo["sampleRate"], "naiveFTWithPhase", {"isCustomFFT" : False}, testInfo["instrument"], blockSize=2048, overlap=1024, customName=testInfo["signalType"]+"CORRECTED")
-    shiftedPitchProfile.writeLog(signalLocation[:-4] + "CORRECTED.log")
+    if saveFile != None:
+        sf.write(saveFile, shiftedSignal, sampleRate)
 
-    expectedPitchData = [noteNameToFreq(getNoteName(x)) for x in originalPitchProfile.pitchData]
+    shiftedPitchProfile = PitchProfile("temp.wav", sampleRate, "naiveFTWithPhase", {"isCustomFFT" : False}, originalPitchProfile.instrument, blockSize=originalPitchProfile.blockSize, overlap=originalPitchProfile.overlap, customName=originalPitchProfile.name+"SHIFTED")
+    shiftedPitchProfile.analysePitch()
+    if verbose:
+        originalPitchProfile.printLog()
+        shiftedPitchProfile.printLog()
+
+    originalPitchProfileCOPY = deepcopy(originalPitchProfile)
+    originalPitchProfileCOPY.autoCorrectPitchData(correctNotes)
+
+    expectedPitchData = originalPitchProfileCOPY.pitchData
 
     pitchDataMeanErrors = getPitchDataMeanErrors(expectedPitchData, shiftedPitchProfile.pitchData)
 
     with open(csvFilePath, "a") as f:
-        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (testInfo["signalType"], testInfo["sampleRate"], testInfo["expectedMin"], testInfo["expectedMax"], testInfo["instrument"], testInfo["correctingTo"], end-start, pitchDataMeanErrors[0], pitchDataMeanErrors[1], pitchDataMeanErrors[2], pitchDataMeanErrors[3]))
-        
+        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (originalPitchProfile.name, sampleRate, originalPitchProfile.detectionParams["expectedMin"], originalPitchProfile.detectionParams["expectedMax"], originalPitchProfile.instrument, originalPitchProfile.blockSize, correctingTo, end-start, pitchDataMeanErrors[0], pitchDataMeanErrors[1], pitchDataMeanErrors[2], pitchDataMeanErrors[3]))
 
-def matchingTestToCSV(signal, matchingSignal, testInfo, csvFilePath):
+
+def matchingTestToCSV(originalPitchProfile, matchingPitchProfile, csvFilePath, verbose=False, saveFile=None):
     '''This function assumes that the csv file already contains headers: 
-        signalType, expectedMin, expectedMax, instrument, matchingSignalType, matchingExpectedMin, matchingExpectedMax, matchingIntrument, time, meanPercentErr, meanAbsMidiErr, meanCorrectNote, meanCorrectNoteWithOctaveErr
+        signalType, sampleRate, expectedMin, expectedMax, instrument, blockSize, matchingSignalType, matchingSampleRate matchingExpectedMin, matchingExpectedMax, matchingIntrument, matchingBlockSize, time, meanPercentErr, meanAbsMidiErr, meanCorrectNote, meanCorrectNoteWithOctaveErr
     ALSO assumes that *testInfo* is a dictionary with these headers as it's keys and the values being the corresponding values.'''
-    originalPitchProfile = PitchProfile(signalLocation, testInfo["sampleRate"], "naiveFTWithPhase", {"isCustomFFT" : False}, testInfo["instrument"], blockSize=2048, overlap=1024, customName=testInfo["signalType"])
-    originalPitchProfile.writeLog(signalLocation[:-4] + ".log")
+    sampleRate = originalPitchProfile.sampleRate
 
     start = timer()
-    correctedSignal = correctPitch(originalPitchProfile)
+    shiftedSignal = pitchShift.matchPitch(originalPitchProfile, matchingPitchProfile)
     end = timer()
 
-    sf.write(signalLocation[:-4] + "CORRECTED.wav", correctedSignal)
+    sf.write("temp.wav", shiftedSignal, sampleRate)
 
-    shiftedPitchProfile = PitchProfile(signalLocation[:-4] + "CORRECTED.wav", testInfo["sampleRate"], "naiveFTWithPhase", {"isCustomFFT" : False}, testInfo["instrument"], blockSize=2048, overlap=1024, customName=testInfo["signalType"]+"CORRECTED")
-    shiftedPitchProfile.writeLog(signalLocation[:-4] + "CORRECTED.log")
+    if saveFile != None:
+        sf.write(saveFile, shiftedSignal, sampleRate)
 
-    expectedPitchData = [noteNameToFreq(getNoteName(x)) for x in originalPitchProfile.pitchData]
+    shiftedPitchProfile = PitchProfile("temp.wav", sampleRate, "naiveFTWithPhase", {"isCustomFFT" : False}, originalPitchProfile.instrument, blockSize=originalPitchProfile.blockSize, overlap=originalPitchProfile.overlap, customName=originalPitchProfile.name+"SHIFTED")
+    shiftedPitchProfile.analysePitch()
+    if verbose:
+        originalPitchProfile.printLog()
+        matchingPitchProfile.printLog()
+        shiftedPitchProfile.printLog()
+
+    expectedPitchData = matchingPitchProfile.pitchData
 
     pitchDataMeanErrors = getPitchDataMeanErrors(expectedPitchData, shiftedPitchProfile.pitchData)
 
     with open(csvFilePath, "a") as f:
-        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (testInfo["signalType"], testInfo["sampleRate"], testInfo["expectedMin"], testInfo["expectedMax"], testInfo["instrument"], testInfo["correctingTo"], end-start, pitchDataMeanErrors[0], pitchDataMeanErrors[1], pitchDataMeanErrors[2], pitchDataMeanErrors[3]))
+        f.write("%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s\n" % (originalPitchProfile.name, sampleRate, originalPitchProfile.detectionParams["expectedMin"], originalPitchProfile.detectionParams["expectedMax"], originalPitchProfile.instrument, originalPitchProfile.blockSize, matchingPitchProfile.name, sampleRate, matchingPitchProfile.detectionParams["expectedMin"], matchingPitchProfile.detectionParams["expectedMax"], matchingPitchProfile.instrument, matchingPitchProfile.blockSize, end-start, pitchDataMeanErrors[0], pitchDataMeanErrors[1], pitchDataMeanErrors[2], pitchDataMeanErrors[3]))
   
