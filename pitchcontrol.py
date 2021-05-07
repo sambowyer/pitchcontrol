@@ -1,4 +1,4 @@
-import sys, getopt, math, logging, argparse
+import sys
 from predict import zerocross, autocorrelation, AMDF, naiveFT, naiveFTWithPhase, cepstrum, HPS
 from helpers import getPitchInfo, getMedian, getTrimmedMean, getHanningWindow, toMono
 import pitchShift
