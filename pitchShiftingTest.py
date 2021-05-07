@@ -252,9 +252,9 @@ def quickTestRun():
 def mainTest():
     # ratioTest(66, 125, "csvs/ratioTest.csv", "testRecords/ratioTestRecord.txt")
 
-    correctingTest(252, "csvs/correctingTest.csv", "testRecords/correctingTestRecord.txt")
+    # correctingTest(252, "csvs/correctingTest.csv", "testRecords/correctingTestRecord.txt")
 
-    matchingTest(48, 48, "csvs/matchingTest.csv", "testRecords/matchingTestRecord.txt", True)
-    matchingTest(48, 48, "csvs/matchingTest.csv", "testRecords/matchingTestRecord.txt", False)
+    matchingTest(0, 2, "csvs/matchingTest.csv", "testRecords/matchingTestRecord.txt", True)
+    matchingTest(10, 9, "csvs/matchingTest.csv", "testRecords/matchingTestRecord.txt", False)
 
 mainTest()

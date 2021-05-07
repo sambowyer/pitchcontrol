@@ -11,11 +11,11 @@ import soundfile as sf
 #       guitar      - E2-E6  =  82.41 Hz - 1318.51 Hz         -/+250cents =  71.33 Hz - 1523.34 Hz
 #       cello       - C2-A5  =  65.41 Hz -  880.00 Hz         -/+250cents =  56.61 Hz - 1016.71 Hz
 #       violin      - G3-A7  = 196.00 Hz - 3520.00 Hz         -/+250cents = 169.64 Hz - 4066.84 Hz
-#       voice       - F2-A5  =  87.31 Hz -  880.00 Hz         -/+250cents =  75.57 Hz - 1016.71 Hz
+#       voice       - F2-C6  =  87.31 Hz - 1046.50 Hz         -/+250cents =  75.57 Hz - 1209.08 Hz
 #       bass guitar - E1-E5  =  41.20 Hz -  659.26 Hz         -/+250cents =  35.66 Hz -  761.67 Hz
 #       trumpet     - F#3-D6 = 185.00 Hz - 1174.66 Hz         -/+250cents = 160.12 Hz - 1357.15 Hz
 #       flute       - C4-C7  = 261.63 Hz - 2093.00 Hz         -/+250cents = 226.45 Hz - 2418.16 Hz
-instrumentRanges = {"piano" : [23.8,4836.32], "guitar" : [71.33,1523.34], "cello" : [56.51,1016.71], "violin" : [169.64,4066.84], "voice" : [75.57,1016.71], "bass guitar" : [35.66,761.67], "trumpet":[160.12,1357.15], "flute":[226.45,2418.16]}
+instrumentRanges = {"piano" : [23.8,4836.32], "guitar" : [71.33,1523.34], "cello" : [56.51,1016.71], "violin" : [169.64,4066.84], "voice" : [75.57,1209.08], "bass guitar" : [35.66,761.67], "trumpet":[160.12,1357.15], "flute":[226.45,2418.16]}
 
 class PitchProfile:
     def __init__(self, location, sampleRate, detectionMode, detectionParams, instrument=None, blockSize=2048, overlap=1024, windowFunction=None, customName=None):

@@ -8,7 +8,7 @@ from timeit import default_timer as timer
 import soundfile as sf
 
 helpMessage = '''pitchcontrol.py usage
-    pitchcontrol [-cdms] [inputFile] (numSemitones) (matchingFile) [outputFile]
+    pitchcontrol [-cdms] [inputFile] (matchingFile) [outputFile] (numSemitones)
 
 -c  --correct   Apply pitch correction to the input file.
 -d  --detect    Detect the pitch of the input file with all detection algorithms.

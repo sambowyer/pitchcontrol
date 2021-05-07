@@ -107,15 +107,15 @@ def naiveFT(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMax=20000):
     Predicts the frequency of a mono signal simply by picking the largest peak in the  Fourier-transform of the signal.'''
 
     freq_vector = np.fft.rfftfreq(len(signal), d=1/sampleRate)
-    
+
     expectedBins = np.where(freq_vector >= expectedMin)[0]
-    if expectedBins == []:
+    if len(expectedBins) == 0:
         minExpectedBin = 1
     else:
         minExpectedBin = min(expectedBins)
 
     expectedBins = np.where(freq_vector <= expectedMax)[0]
-    if expectedBins == []:
+    if len(expectedBins) == 0:
         maxExpectedBin = len(freq_vector)
     else:
         maxExpectedBin = max(expectedBins)
@@ -142,13 +142,13 @@ def naiveFTWithPhase(signal, sampleRate, isCustomFFT, expectedMin=20, expectedMa
     freq_vector = np.fft.rfftfreq(windowLength, d=1/sampleRate)
 
     expectedBins = np.where(freq_vector >= expectedMin)[0]
-    if expectedBins == []:
+    if len(expectedBins) == 0:
         minExpectedBin = 1
     else:
         minExpectedBin = min(expectedBins)
 
     expectedBins = np.where(freq_vector <= expectedMax)[0]
-    if expectedBins == []:
+    if len(expectedBins) == 0:
         maxExpectedBin = len(freq_vector)
     else:
         maxExpectedBin = max(expectedBins)

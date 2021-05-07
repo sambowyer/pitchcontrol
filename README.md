@@ -2,53 +2,46 @@
 ## CS Project 2020-21 (3rd Year 40-credit module)
 ### (A pitch detection and shifting program/library)
 
-A command-line program providing a range of pitch detection algorithms with pitch shifting capability. Although the project can be thought of as a library, a command-line interface is available (using [pitchControl.py](pitchControl.py)) for some of the more important use cases.
-
 ### Requirements (all available with pip)
 - numpy
 - soundfile
 - midiutil (optional - only needed for [MIDIGenerator.py](MIDIGenerator.py) which has been used to prepare tests but is not really an important part of this project)
 
+## Running pitchcontrol.py
+Although much more functionality is possible using these python files more as a library (as was the case for the content of the report and the project as a whole), I have also written [pitchcontrol.py](pitchcontrol.py) as a simple command line interface for four of the basic use cases.
 
-## Pitch Detection
-There are six different pitch detection algorithms avaiable to use (all located in [predict.py](predict.py)):
-- **zerocross**
-  - Calculates the average distance (in samples) between points where the signal changes between positive and negative values, then assumes that this is half the signal's period and uses the sample rate information to make a frequency prediction.
-  - [ADD CODE/CMD]
-- **autocorrelation**
-  - Predicts the frequency of a mono signal by finding the time interval (of m samples) for which the signal most consistently repeats itself. Autocorrelation uses the product of signal values at intervals of m samples to find this optimal m.
-  - [ADD CODE/CMD]
-- **AMDF** (Average Magnitude Differential Function)
-  - Predicts the frequency of a mono signal by finding the time interval (of m samples) for which the signal most consistently repeats itself. AMDF uses the Euclidean distance (to the power of b) between signal values at intervals of m samples to find this optimal m.
-  - [ADD CODE/CMD]
-- **naiveFT**
-  - Predicts the frequency of a mono signal simply by picking the largest peak in the  Fourier-transform of the signal.
-  - [ADD CODE/CMD]
-- **cepstrum**
-  - Predicts the frequency of a mono signal by finding the period which most strongly correlates to the distance between peaks in the Fourier-transform of the signal.
-    Assuming the peaks in the Fourier transform are located at harmonics of the signal, this period should represent the distance between the harmonics, i.e. the fundamental period.
-    [ADD CODE/CMD]
-- **HPS** (Harmonic Product Spectrum)
-  - Predicts the frequency of a mono signal by first computing (the magnitudes within) its Fourier-transform and then resampling (downsampling) this by factors of 1/2, 1/3, 1/4, etc. . Then we may multiply these downsampled versions and can expect a peak correlating to the fundamental frequency of the original signal.
-  - [ADD CODE/CMD]
+### Pitch Detection
+Typing the following command will return the pitch predictions (and execution times) from all available pitch detection algorithms on the file 'signal.wav':
+```
+python3 pitchcontrol.py --detect signal.wav
+```
+`-d` may be used instead of `--detect`.
 
-The option to get the mean prediction among all six algorithms is also available with the function *getTrimmedMeanPrediction*.
+### Simple Pitch Shifting
+The following command will perform a pitch shift of n semitones (where n must be an integer or a float) on the file 'signal.wav' and save the output in the file 'shifted.wav':
+```
+python3 pitchcontrol.py --shift signal.wav shifted.wav n
+```
+`-s` may be used instead of `--shift`.
 
-[pitchProfile.py](pitchProfile.py) also defines a *PitchProfile* object which analyses .wav files and provides information about the file's pitch over time (using one of the six aforementioned pitch detection algorithms).
+### Pitch Correction
+The following command will correct the frequencies of the notes inside 'signal.wav' (making sure they're all in tune) and save the output in the file 'corrected.wav':
+```
+python3 pitchcontrol.py --correct signal.wav corrected.wav
+```
+`-c` may be used instead of `--correct`.
 
-## Pitch Shifting
-A standard phase vocoder is implemented in [pitchShift.py](pitchShift.py)), allowing users to stretch or compress a signal without affecting the frequency.
-- [ADD CODE/CMD]
-  
-Once a signal has been stretched/compressed by the phase vocoder, we may resample the result at an altered sample rate to obtain a pitch-shifted version of the original signal (hopefully with minimal glitches - though some signals do fare better than others). The following pitch shifting features are available to use (located in [pitchShift.py](pitchShift.py)):
-- Pitch shifting **by ratio**
-  - [ADD CODE/CMD]
-- Pitch **correction**
-  - [ADD CODE/CMD]
-- Pitch **matching**
-  - [ADD CODE/CMD]
+### Pitch Matching
+The following command will sequentially shift parts of 'original.wav' so that it matches the melody inside the file 'matching.wav' and save the output in the file 'matched.wav':
+```
+python3 pitchcontrol.py --match original.wav matching.wav matched.wav
+```
+`-m` may be used instead of `--match`.
 
-## Miscellaneous
+(The 'simpler' the audio inside 'original.wav', the better the result is likely to be).
+
+
+## Other Notable files
 The file [signalGenerator.py](signalGenerator.py) can be used to generate the following common types of signals with a chosen frequency, length and sample rate:
 - Sine wave
 - Sawtooth wave
@@ -56,6 +49,6 @@ The file [signalGenerator.py](signalGenerator.py) can be used to generate the fo
 - Triangle wave
 - Sine wave with *n* harmonics (where *n*is chosen by the user)
 
-The file [helpers.py](helpers.py) also provides a wide range of features that may be useful for signal processing and frequency analysis (as well as a simple short time fourier transform (STFT)).
+The file [helpers.py](helpers.py) also provides a wide range of features that may be useful for signal processing and frequency analysis.
 
-The file [customFFT.py](customFFT.py) contains a simple forward fast fourier transform (FFT) implementation that may be used with any of the time-domain pitch detection algorithms (i.e. naiveFT, cepstrum and HPS).
+The file [customFFT.py](customFFT.py) contains a simple forward fast fourier transform (FFT) implementation that may be used with any of the frequency-domain pitch detection algorithms (i.e. naiveFT, naiveFTWithPhase, cepstrum and HPS).

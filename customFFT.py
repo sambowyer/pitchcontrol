@@ -21,8 +21,4 @@ def fftRecurse(data):
             t = cmath.exp(-2j*cmath.pi*k/N) * odd[k]
             data[k] = even[k] + t
             data[k + N//2] = even[k] - t
-    
-
-def ifft(bins, fullLength=False):
-    conjugateBins = [x.conjugate() for x in bins]
-    return [x.conjugate()/len(bins) for x in fft(conjugateBins, fullLength)]
+            

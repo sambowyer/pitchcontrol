@@ -322,7 +322,7 @@ def midiTest():
 
 def generateInstrumentFrequencyRanges():
     instrumentRanges = {"piano" : ["A0","C8"], "guitar" : ["E2","E6"], "cello" : ["C2","A5"], "violin" : ["G3","A7"],
-                        "voice" : ["F2","A5"], "bass guitar" : ["E1","E5"], "trumpet" : ["F#3","D6"], "flute" : ["C4","C7"]}
+                        "voice" : ["F2","C6"], "bass guitar" : ["E1","E5"], "trumpet" : ["F#3","D6"], "flute" : ["C4","C7"]}
     freqRanges = {}
     freqRangesPlus250Cents = {}
     for instrument in instrumentRanges:
@@ -875,7 +875,7 @@ def majorScalesTest():
         scaleNoteNames = [getNoteName(midiToFreq(x)) for x in scale]
         print(tonic, scale, scaleNoteNames)
 
-majorScalesTest()
+generateInstrumentFrequencyRanges()
 
 # printPitchInfo(440)
 
