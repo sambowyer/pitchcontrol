@@ -2,7 +2,6 @@ import customFFT
 import math, cmath
 from helpers import resample, getTrimmedMean, getMidiNoteWithCents, fft
 import numpy as np 
-import matplotlib.pyplot as plt #for bug fixing and testing
 
 #### TIME-DOMAIN ALGORITHMS
 
